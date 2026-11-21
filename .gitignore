@@ -1,0 +1,22 @@
+src/scene/sources/inline.generated.js
+node_modules
+dist
+dist-inline
+src/scene/sources/inline-media.generated.js
+.DS_Store
+test-results
+playwright-report
+
+# secrets and access keys
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.npmrc
+.vercel
+
+# editor and local logs
+.vscode/
+.idea/
+*.log

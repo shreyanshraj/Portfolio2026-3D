@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- the glass door at sunrise: predawn sky, a low gold sun, the desert floor -->
+  <clipPath id="c"><rect width="64" height="64" rx="14"/></clipPath>
+  <g clip-path="url(#c)">
+    <rect width="64" height="64" fill="#3a4566"/>
+    <circle cx="32" cy="40" r="14" fill="#f2c14e"/>
+    <rect y="42" width="64" height="22" fill="#5e7a5a"/>
+  </g>
+</svg>
