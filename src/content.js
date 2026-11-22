@@ -1,5 +1,4 @@
 // Everything a visitor reads lives here, so copy edits never touch the scene code.
-// Text in [brackets] is a placeholder to replace.
 
 export const OBJECTS = {
   raj: {
@@ -94,7 +93,6 @@ export const PROJECTS = [
       "A mobile app for a food pantry organization, planned for about 500 students a week across 4 campuses and up to 10 check-ins at once. I'm the sole developer. QR check-in cut each check-in from about 20 seconds to under 3, and it also runs surveys, a waitlist and volunteer tracking.",
     stack: 'React Native, TypeScript, Firebase',
     status: 'App Store and Google Play submission in preparation',
-    screen: '[App screenshots]',
   },
   {
     id: 'cab',
@@ -102,7 +100,6 @@ export const PROJECTS = [
     summary: 'Cleaned 500K+ GPS cab-trip records and plotted their trajectories on an interactive map, fast enough to explore demand patterns in under a second.',
     stack: 'Pandas, D3.js',
     link: 'https://github.com/shreyanshraj/ShreyanshRaj-Traffic-Visualization',
-    screen: '[Trajectory map]',
   },
   {
     id: 'migration',
@@ -110,7 +107,6 @@ export const PROJECTS = [
     summary:
       'Built at Infosys: moved Work Breakdown Structure data from legacy systems into a new SAP S/4HANA platform at 1M records a week, cut upload time by 50% with no manual monitoring, and flagged failed uploads in reconciliation reports.',
     stack: 'SAP S/4HANA, ABAP OO, CDS Views, AMDP',
-    screen: '[Before and after]',
   },
   {
     id: 'cctv',
@@ -119,7 +115,6 @@ export const PROJECTS = [
       'A serverless computer-vision pipeline that sustains 500+ frames a minute with auto-scaling. Async SQS messaging and batched Lambda calls cut end-to-end latency by 80%, and keeping one instance warm made processing about 40% faster.',
     stack: 'AWS (EC2, SQS, S3, Lambda), Docker, Kubernetes, OpenCV',
     link: 'https://github.com/shreyanshraj/AWS-Cloud-Facial-Recogniition',
-    screen: '[Demo still]',
   },
 ]
 

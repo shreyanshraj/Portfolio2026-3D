@@ -163,12 +163,9 @@ a:hover { color: var(--ink); }
 }
 @keyframes panel-in { from { opacity: 0; transform: translateX(16px); } }
 .project-panel .btn { align-self: flex-start; }
-.project-screen {
-  aspect-ratio: 16 / 10; border-radius: 10px;
-  background: var(--ink); color: var(--haze);
-  display: grid; place-items: center; font-size: 17px;
-  border: 10px solid #9aa1ac;
-}
+/* the project's illustration, framed like a monitor */
+.project-screen { border-radius: 10px; background: var(--ink); border: 10px solid #9aa1ac; overflow: hidden; }
+.project-screen svg { display: block; width: 100%; height: auto; }
 .project-panel h1 { margin: 6px 0 0; font-size: 36px; line-height: 1.1; font-weight: 700; font-variation-settings: var(--casual); }
 .project-summary { margin: 0; font-size: 17px; line-height: 1.55; max-width: 34em; }
 .project-stack { margin: 0; font-size: 15px; color: var(--ink-soft); }
@@ -186,7 +183,7 @@ a:hover { color: var(--ink); }
     top: auto; left: 12px; right: 12px; bottom: 12px; width: auto; max-height: 58vh;
     padding: 16px;
   }
-  .project-screen { display: none; }
+  .project-screen { border-width: 6px; }
   .project-panel h1 { font-size: 28px; }
 }
 
@@ -254,6 +251,7 @@ body:has(.resume) { background: var(--paper); }
 }
 .contact-form input:focus-visible, .contact-form textarea:focus-visible { outline: 3px solid var(--ink); outline-offset: 1px; border-color: var(--ink); }
 .contact-form textarea { resize: vertical; min-height: 96px; }
+.contact-form .honeypot { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .contact-form .btn { align-self: flex-start; }
 .contact-status { margin: 0; font-size: 15px; line-height: 1.5; }
 .contact-status.error { color: #9B3B2A; }
@@ -266,7 +264,4 @@ body:has(.resume) { background: var(--paper); }
 }
 .link-button:hover { color: var(--ink); }
 .bubble .bubble-time { font-size: 14px; color: var(--ink-soft); font-variation-settings: var(--straight); }
-.project-screen.has-art { display: block; padding: 0; overflow: hidden; aspect-ratio: auto; }
 .project-panel > * { flex-shrink: 0; }
-.project-screen.has-art svg { display: block; width: 100%; height: auto; }
-@media (max-width: 760px) { .project-screen.has-art { display: none; } } /* phones: no room for the diagrams, same as the placeholders */

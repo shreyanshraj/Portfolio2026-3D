@@ -104,8 +104,6 @@ Replace that file to update it; keep the same name or change `PDF_URL` in
 | Colours | `src/scene/palette.js` and the top of `src/styles.css` |
 | Camera framing and the zoom into the laptop | `src/scene/Experience.jsx` |
 
-Text in `[brackets]` is a placeholder.
-
 ### Placing a model
 
 Kenney models face +z, so `Model` takes a turn and a corner position instead

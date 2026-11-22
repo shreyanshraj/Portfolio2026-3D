@@ -4,21 +4,15 @@ import { PROJECT_ART } from './ProjectArt'
 // Sits beside the zoomed-in laptop.
 export function ProjectPanel({ current, onChoose, onBack }) {
   const p = PROJECTS.find((x) => x.id === current) ?? PROJECTS[0]
+  const Art = PROJECT_ART[p.id]
   return (
     <section className="project-panel" aria-labelledby="project-name">
       <button className="btn" onClick={onBack}>
         Back to the room
       </button>
-      {PROJECT_ART[p.id] ? (
-        <div className="project-screen has-art">
-          {(() => {
-            const Art = PROJECT_ART[p.id]
-            return <Art />
-          })()}
-        </div>
-      ) : (
-        <div className="project-screen" aria-hidden="true">
-          {p.screen}
+      {Art && (
+        <div className="project-screen">
+          <Art />
         </div>
       )}
       <h1 id="project-name">{p.name}</h1>

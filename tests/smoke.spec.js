@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { OBJECTS } from '../src/content.js'
 
 // Fail any test where the page throws.
 test.beforeEach(({ page }) => {
@@ -97,7 +98,7 @@ test.describe("the glass door's What's next bubble", () => {
     await expect(page.getByText('Click anything in the room.')).toBeVisible({ timeout: 20_000 })
     await page.getByRole('button', { name: 'Glass door' }).click()
     const bubble = page.getByRole('dialog', { name: "What's next." })
-    await expect(bubble).toContainText("I'm looking for a full-stack role")
+    await expect(bubble).toContainText(OBJECTS.door.body) // follows copy edits in content.js
     const line = bubble.locator('.bubble-time')
     await expect(line).toHaveText(`It's 9:58 PM in Tempe, ${AWAKE}`)
     await page.clock.fastForward('02:00') // past 10:00 pm
