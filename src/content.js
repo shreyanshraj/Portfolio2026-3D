@@ -118,7 +118,7 @@ export const PROJECTS = [
     summary:
       'A serverless computer-vision pipeline that sustains 500+ frames a minute with auto-scaling. Async SQS messaging and batched Lambda calls cut end-to-end latency by 80%, and keeping one instance warm made processing about 40% faster.',
     stack: 'AWS (EC2, SQS, S3, Lambda), Docker, Kubernetes, OpenCV',
-    link: 'https://github.com/shreyanshraj/AWS-Cloud-Facial-Recognition',
+    link: 'https://github.com/shreyanshraj/AWS-Cloud-Facial-Recogniition',
     screen: '[Demo still]',
   },
 ]
@@ -198,7 +198,7 @@ export const RESUME = {
       name: 'Real-Time Face Recognition on CCTV Streams',
       tech: 'AWS (EC2, SQS, S3, Lambda), Docker, Kubernetes, OpenCV',
       note: 'October 2025',
-      link: 'https://github.com/shreyanshraj/AWS-Cloud-Facial-Recognition',
+      link: 'https://github.com/shreyanshraj/AWS-Cloud-Facial-Recogniition',
       text: 'Built a serverless computer-vision pipeline sustaining 500+ frames/min with auto-scaling; cut end-to-end latency 80% via async SQS messaging and batched Lambda invocations; fixed Lambda cold starts by keeping an instance warm, making processing ~40% faster.',
     },
   ],

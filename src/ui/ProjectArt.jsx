@@ -109,4 +109,137 @@ export function CctvArt() {
   )
 }
 
-export const PROJECT_ART = { migration: MigrationArt, cctv: CctvArt }
+// Two phones: a student checking in by QR code, and the volunteer's queue
+// view, with the check-in time and reach underneath.
+export function PantryArt() {
+  const phone = (x, children) => (
+    <g transform={`translate(${x} 14)`}>
+      <rect width="84" height="150" rx="12" fill="#11162C" />
+      <rect x="5" y="9" width="74" height="132" rx="6" fill={PAPER} />
+      <rect x="32" y="3" width="20" height="3" rx="1.5" fill="#3A4566" />
+      {children}
+    </g>
+  )
+  // a decorative QR code (encodes nothing): three corner finder squares and a
+  // fixed scatter of modules on a 21 x 21 grid
+  const N = 21
+  const finder = (r, c) => {
+    for (const [fr, fc] of [[0, 0], [0, N - 7], [N - 7, 0]]) {
+      const y = r - fr, x = c - fc
+      if (y >= -1 && y <= 7 && x >= -1 && x <= 7) {
+        if (y < 0 || y > 6 || x < 0 || x > 6) return 0
+        return y === 0 || y === 6 || x === 0 || x === 6 || (y >= 2 && y <= 4 && x >= 2 && x <= 4) ? 1 : 0
+      }
+    }
+    return -1
+  }
+  const qr = []
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const f = finder(r, c)
+    if (f === 1 || (f === -1 && ((r * 37 + c * 91 + r * c * 13) % 7) < 3)) qr.push([r, c])
+  }
+  return (
+    <svg viewBox="0 0 320 200" role="img" aria-label="Illustration: a phone showing a QR check-in screen and another showing the pantry's check-in queue, with check-in time cut from 20 seconds to under 3">
+      <rect width="320" height="200" fill="#1F2540" />
+      {phone(26, (
+        <>
+          <text x="42" y="26" textAnchor="middle" style={{ ...label, fill: INK, fontWeight: 700 }}>Check in</text>
+          <g transform="translate(18 34)">
+            <rect width="48" height="48" rx="3" fill="#FFFFFF" stroke={HAZE} />
+            {qr.map(([r, c]) => (
+              <rect key={`${r}-${c}`} x={3 + c * 2} y={3 + r * 2} width="2.05" height="2.05" fill={INK} />
+            ))}
+          </g>
+          <rect x="16" y="90" width="52" height="16" rx="8" fill={SAGE} />
+          <text x="42" y="101" textAnchor="middle" style={{ ...small, fill: PAPER, fontWeight: 700 }}>Checked in</text>
+          <text x="42" y="120" textAnchor="middle" style={{ ...small, fill: INK }}>Pickup today</text>
+          <text x="42" y="131" textAnchor="middle" style={{ ...small, fontSize: 6.2, fill: '#6B7A94' }}>Survey after pickup</text>
+        </>
+      ))}
+      {phone(124, (
+        <>
+          <text x="42" y="26" textAnchor="middle" style={{ ...label, fill: INK, fontWeight: 700 }}>Today</text>
+          {[
+            ['Student', 'In', SAGE, PAPER],
+            ['Student', 'In', SAGE, PAPER],
+            ['Student', 'Wait', SUN, INK],
+            ['Volunteer', 'Shift', SOFT, INK],
+            ['Student', 'In', SAGE, PAPER],
+          ].map(([who, tag, c, t], i) => (
+            <g key={i} transform={`translate(10 ${38 + i * 19})`}>
+              <rect width="64" height="15" rx="3" fill="#E9EEF2" />
+              <circle cx="7" cy="7.5" r="3.5" fill="#8E9DB4" />
+              <text x="13.5" y="10" style={{ ...small, fontSize: 6, fill: INK }}>{who}</text>
+              <rect x="45" y="3.5" width="16" height="8" rx="4" fill={c} />
+              <text x="53" y="9.4" textAnchor="middle" style={{ ...small, fontSize: 4.6, fill: t, fontWeight: 700 }}>{tag}</text>
+            </g>
+          ))}
+        </>
+      ))}
+      {/* numbers */}
+      <rect x="222" y="22" width="84" height="52" rx="6" fill={PAPER} />
+      <text x="232" y="44" style={{ ...label, fill: INK, fontSize: 14, fontWeight: 800 }}>20s → 3s</text>
+      <text x="232" y="58" style={{ ...small, fill: INK }}>per check-in</text>
+      <rect x="222" y="82" width="84" height="52" rx="6" fill={PAPER} />
+      <text x="232" y="104" style={{ ...label, fill: INK, fontSize: 14, fontWeight: 800 }}>~500</text>
+      <text x="232" y="118" style={{ ...small, fill: INK }}>students a week</text>
+      <rect x="222" y="142" width="84" height="22" rx="6" fill={SAGE} />
+      <text x="264" y="156" textAnchor="middle" style={{ ...small, fill: PAPER, fontWeight: 700 }}>4 campuses</text>
+      <text x="160" y="188" textAnchor="middle" style={small}>React Native · TypeScript · Firebase</text>
+    </svg>
+  )
+}
+
+// A city street grid with cab trips traced across it (busier routes warmer),
+// pickup hot spots, and an hourly demand chart beside the headline numbers.
+export function CabArt() {
+  const trips = [
+    ['M20 150 L60 150 L60 110 L120 110 L120 60 L170 60', SUN, 2.2],
+    ['M30 40 L30 80 L90 80 L90 130 L150 130 L150 170', RUST, 1.8],
+    ['M180 30 L140 30 L140 90 L70 90 L70 170', SUN, 1.6],
+    ['M10 100 L50 100 L50 60 L100 60 L100 20', SOFT, 1.4],
+    ['M180 150 L110 150 L110 100 L40 100', SOFT, 1.4],
+    ['M160 100 L160 70 L130 70 L130 40 L80 40', RUST, 1.4],
+  ]
+  return (
+    <svg viewBox="0 0 320 200" role="img" aria-label="Illustration: cab trip trajectories traced over a city street grid with pickup hot spots, and a chart of trips by hour of day">
+      <rect width="320" height="200" fill="#1F2540" />
+      {/* the map */}
+      <rect x="8" y="10" width="184" height="180" rx="6" fill="#2B3352" />
+      {[30, 50, 70, 90, 110, 130, 150, 170].map((v) => (
+        <g key={v} stroke="#3A4566" strokeWidth="1">
+          <path d={`M10 ${v} H190`} />
+          <path d={`M${v} 12 V188`} />
+        </g>
+      ))}
+      <path d="M8 178 Q70 150 120 176 T192 160" stroke="#3E5A7A" strokeWidth="7" fill="none" opacity="0.8" />
+      {trips.map(([d, c, w], i) => (
+        <path key={i} d={d} stroke={c} strokeWidth={w} fill="none" strokeLinejoin="round" opacity="0.9" />
+      ))}
+      {[[120, 60, 9], [60, 110, 7], [140, 30, 6], [90, 130, 5]].map(([x, y, r]) => (
+        <g key={`${x}${y}`}>
+          <circle cx={x} cy={y} r={r} fill={SUN} opacity="0.18" />
+          <circle cx={x} cy={y} r="2.4" fill={SUN} />
+        </g>
+      ))}
+
+      {/* trips by hour */}
+      <text x="204" y="24" style={{ ...label, fontWeight: 700 }}>Trips by hour</text>
+      {[3, 2, 1, 1, 2, 4, 7, 9, 8, 6, 6, 7, 7, 6, 6, 7, 8, 10, 9, 8, 7, 6, 5, 4].map((h, i) => (
+        <rect key={i} x={204 + i * 4.5} y={86 - h * 5.5} width="3.4" height={h * 5.5} rx="1" fill={h >= 9 ? SUN : SOFT} />
+      ))}
+      <text x="204" y="96" style={small}>0h</text>
+      <text x="310" y="96" textAnchor="end" style={small}>23h</text>
+
+      {/* numbers */}
+      <rect x="204" y="108" width="104" height="36" rx="6" fill={PAPER} />
+      <text x="214" y="125" style={{ ...label, fill: INK, fontSize: 14, fontWeight: 800 }}>500K+</text>
+      <text x="214" y="137" style={{ ...small, fill: INK }}>GPS records cleaned</text>
+      <rect x="204" y="150" width="104" height="36" rx="6" fill={PAPER} />
+      <text x="214" y="167" style={{ ...label, fill: INK, fontSize: 14, fontWeight: 800 }}>&lt; 1s</text>
+      <text x="214" y="179" style={{ ...small, fill: INK }}>to explore a pattern</text>
+    </svg>
+  )
+}
+
+export const PROJECT_ART = { pantry: PantryArt, cab: CabArt, migration: MigrationArt, cctv: CctvArt }

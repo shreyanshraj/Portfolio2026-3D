@@ -10,29 +10,29 @@ const v = (x, y, z) => new THREE.Vector3(x, y, z)
 export const DIM = {
   bg: '#2A3150', sky: '#4E5A80', ground: '#1D2238', hemi: 0.45, fill: 0.12,
   sun: '#F0A65A', sunInt: 0, target: v(0.75, 0, 1.35), beam: 0, beamColor: '#F2C14E',
-  outside: '#4E5A80', lamp: 0, screen: 0.15, tv: 0, desk: 0, bias: 0,
+  outside: '#4E5A80', lamp: 0, screen: 0.15, tv: 0, desk: 0, bias: 0, shelf: 0,
 }
 
 export const PRESETS = {
   morning: {
     bg: '#CFDCE3', sky: '#E9EEF2', ground: '#B9A385', hemi: 2.6, fill: 1.3,
     sun: '#FFE2A8', sunInt: 4.2, target: v(0.75, 0, 1.35), beam: 0.07, beamColor: '#F2C14E',
-    outside: '#FFFFFF', lamp: 0, screen: 0.6, tv: 0.35, desk: 1.6, bias: 0.08,
+    outside: '#FFFFFF', lamp: 0, screen: 0.6, tv: 0.35, desk: 1.6, bias: 0.08, shelf: 0,
   },
   day: {
     bg: '#D6E2E8', sky: '#F4F6F8', ground: '#C2AE90', hemi: 3.0, fill: 1.6,
     sun: '#FFF3D6', sunInt: 4.8, target: v(1.35, 0, 0.8), beam: 0.045, beamColor: '#FFE7A8',
-    outside: '#FFFFFF', lamp: 0, screen: 0.6, tv: 0.35, desk: 1.1, bias: 0.06,
+    outside: '#FFFFFF', lamp: 0, screen: 0.6, tv: 0.35, desk: 1.1, bias: 0.06, shelf: 0,
   },
   evening: {
     bg: '#D3C4C6', sky: '#E7C9B0', ground: '#8E7356', hemi: 1.7, fill: 0.8,
     sun: '#F59E5B', sunInt: 4.4, target: v(0.3, 0, 1.9), beam: 0.1, beamColor: '#F2A65A',
-    outside: '#FFFFFF', lamp: 1.4, screen: 0.9, tv: 0.6, desk: 4.5, bias: 0.2,
+    outside: '#FFFFFF', lamp: 1.4, screen: 0.9, tv: 0.6, desk: 4.5, bias: 0.2, shelf: 0.25,
   },
   night: {
     bg: '#1F2540', sky: '#4E5A80', ground: '#2A3150', hemi: 0.8, fill: 0.28,
     sun: '#A9BCE0', sunInt: 1.5, target: v(0.95, 0, 1.15), beam: 0.04, beamColor: '#A9BCE0',
-    outside: '#FFFFFF', lamp: 3.2, screen: 1.8, tv: 1.0, desk: 7.5, bias: 0.35,
+    outside: '#FFFFFF', lamp: 3.2, screen: 1.8, tv: 1.0, desk: 7.5, bias: 0.35, shelf: 0.75,
   },
 }
 

@@ -20,7 +20,7 @@ function toLive(p) {
     target: p.target.clone(),
   }
 }
-const NUMS = ['hemi', 'fill', 'sunInt', 'beam', 'lamp', 'screen', 'tv', 'desk', 'bias']
+const NUMS = ['hemi', 'fill', 'sunInt', 'beam', 'lamp', 'screen', 'tv', 'desk', 'bias', 'shelf']
 const COLS = ['bg', 'sky', 'ground', 'sun', 'beamColor', 'outside']
 const cloneLive = (l) => ({ ...l, ...Object.fromEntries(COLS.map((k) => [k, l[k].clone()])), target: l.target.clone() })
 function mix(out, a, b, t) {
@@ -80,6 +80,7 @@ export function Lighting({ phase, picked, backdropRef, instant, lowPower }) {
   const screenLight = useRef()
   const tvLight = useRef()
   const biasLight = useRef()
+  const shelfLight = useRef()
   const beam = useBeam()
 
   const dim = useMemo(() => toLive(DIM), [])
@@ -141,6 +142,7 @@ export function Lighting({ phase, picked, backdropRef, instant, lowPower }) {
     for (const l of LIGHTS.desk) l.intensity = live.desk
     for (const m of GLOW.desk) m.emissiveIntensity = 0.3 + live.desk * 0.35
     biasLight.current.intensity = live.bias
+    shelfLight.current.intensity = live.shelf
     for (const m of GLOW.screen) m.emissiveIntensity = live.screen
     tvScreen.color.setScalar(0.35 + 0.65 * k) // pictures brighten with the room
     laptopScreen.color.setScalar(0.35 + 0.65 * k)
@@ -193,6 +195,8 @@ export function Lighting({ phase, picked, backdropRef, instant, lowPower }) {
       <pointLight ref={screenLight} position={[0.42, 0.52, 1.47]} color="#9FB4C7" distance={0.8} decay={2} intensity={0} />
       <pointLight ref={tvLight} position={[1.15, 0.5, 0.4]} color="#8FA6D0" distance={1.4} decay={2} intensity={0} />
       <pointLight ref={biasLight} position={[1.16, 0.56, 0.035]} color="#FFD9A0" distance={0.55} decay={2} intensity={0} />
+      {/* soft warm fill in the bookshelf corner, evening and night only */}
+      <pointLight ref={shelfLight} position={[0.55, 0.95, 0.45]} color="#FFD9A8" distance={1.1} decay={1.4} intensity={0} />
       <primitive object={spotTarget} />
       <spotLight ref={spot} target={spotTarget} angle={0.32} penumbra={0.9} distance={5} decay={1.2} color={C.sun} intensity={0} />
       <mesh geometry={beam.geometry} material={beamMaterial} renderOrder={10} frustumCulled={false} />
