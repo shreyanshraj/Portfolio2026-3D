@@ -156,6 +156,7 @@ a:hover { color: var(--ink); }
   display: flex; flex-direction: column; gap: 14px;
   font-variation-settings: var(--straight);
   background: rgba(247, 248, 245, 0.94);
+  color: var(--ink);
   border-radius: 20px;
   padding: 20px;
   box-shadow: 0 24px 60px -30px rgba(46, 53, 80, 0.55);
