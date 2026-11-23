@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build && node scripts/prerender-resume.mjs",
     "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "playwright test",
     "build:inline": "node scripts/inline-models.mjs && vite build --mode inline --outDir dist-inline"
