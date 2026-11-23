@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { OBJECTS, HOME_TIME } from '../content'
+import type { ActionKind, ObjectId } from '../content'
+import type { Phase } from '../clock'
+
+// What a bubble's button asks App to do.
+export interface BubbleAction {
+  kind: ActionKind
+  project?: string
+}
 
 const CloseIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
@@ -8,7 +16,7 @@ const CloseIcon = () => (
 )
 
 // "It's 9:14 pm in Tempe, so ..." in the visitor's language, using your time zone.
-function homeTimeLine(now) {
+function homeTimeLine(now: Date) {
   const time = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZone: HOME_TIME.timeZone })
   const hour = Number(now.toLocaleString('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: HOME_TIME.timeZone }))
   const awake = hour >= HOME_TIME.awakeFrom && hour < HOME_TIME.awakeUntil
@@ -21,7 +29,7 @@ function homeTimeLine(now) {
 function HomeTime() {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
-    let id
+    let id: ReturnType<typeof setTimeout>
     const untilNextMinute = () => 60_000 - (Date.now() % 60_000)
     const tick = () => {
       setNow(new Date())
@@ -34,9 +42,16 @@ function HomeTime() {
 }
 
 // The speech bubble that opens next to a clicked object.
-export function Bubble({ id, phase, onAction, onClose }) {
+interface BubbleProps {
+  id: ObjectId
+  phase: Phase
+  onAction: (a: BubbleAction) => void
+  onClose: () => void
+}
+
+export function Bubble({ id, phase, onAction, onClose }: BubbleProps) {
   const o = { ...OBJECTS[id], ...OBJECTS[id].byPhase?.[phase] }
-  const title = useRef()
+  const title = useRef<HTMLHeadingElement>(null)
   useEffect(() => {
     title.current?.focus({ preventScroll: true })
   }, [id])
@@ -50,7 +65,8 @@ export function Bubble({ id, phase, onAction, onClose }) {
       </h2>
       <p>{o.body}</p>
       {o.action?.kind === 'projects' && (
-        <button className="btn btn-solid" onClick={() => onAction(o.action)}>
+        // `!`: this branch only renders when o.action exists; the closure loses that narrowing
+        <button className="btn btn-solid" onClick={() => onAction(o.action!)}>
           {o.action.label}
         </button>
       )}

@@ -2,7 +2,13 @@ import { PROJECTS } from '../content'
 import { PROJECT_ART } from './ProjectArt'
 
 // Sits beside the zoomed-in laptop.
-export function ProjectPanel({ current, onChoose, onBack }) {
+interface ProjectPanelProps {
+  current: string
+  onChoose: (id: string) => void
+  onBack: () => void
+}
+
+export function ProjectPanel({ current, onChoose, onBack }: ProjectPanelProps) {
   const p = PROJECTS.find((x) => x.id === current) ?? PROJECTS[0]
   const Art = PROJECT_ART[p.id]
   return (

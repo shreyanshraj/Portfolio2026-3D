@@ -1,6 +1,25 @@
 // Everything a visitor reads lives here, so copy edits never touch the scene code.
+import type { Phase } from './clock'
 
-export const OBJECTS = {
+export type ActionKind = 'projects' | 'resume' | 'message'
+export interface ObjectAction {
+  kind: ActionKind
+  label: string
+  project?: string // which project 'projects' opens on
+}
+export interface ObjectInfo {
+  label: string
+  title?: string
+  body?: string
+  byPhase?: Partial<Record<Phase, { title?: string; body?: string }>>
+  action?: ObjectAction
+  toggle?: boolean
+  localTime?: boolean
+}
+
+// `satisfies` checks every field while keeping the keys literal, so ObjectId
+// below is the exact list of ids; OBJECTS then exposes each entry as ObjectInfo.
+const OBJECT_INFO = {
   raj: {
     label: 'Raj at the desk',
     title: "Hi, I'm Raj.",
@@ -62,7 +81,12 @@ export const OBJECTS = {
     label: 'Window: open or close it',
     toggle: true,
   },
-}
+} satisfies Record<string, ObjectInfo>
+
+export type ObjectId = keyof typeof OBJECT_INFO
+export const OBJECTS: Record<ObjectId, ObjectInfo> = OBJECT_INFO
+// For ids read from the DOM or other untyped places.
+export const isObjectId = (x: unknown): x is ObjectId => typeof x === 'string' && x in OBJECTS
 
 // The roles that type themselves out under your name: "Open to ___ roles".
 export const ROLES = ['software engineer', 'full-stack', 'cloud developer']
@@ -70,7 +94,7 @@ export const ROLES = ['software engineer', 'full-stack', 'cloud developer']
 // The "Get in touch" form posts to this Formspree form, which emails each
 // message to you. Set endpoint to null and Send opens the visitor's email app
 // with their message filled in instead.
-export const CONTACT_FORM = {
+export const CONTACT_FORM: { endpoint: string | null; intro: string } = {
   endpoint: 'https://formspree.io/f/xkjrvkle',
   intro: "Hiring for a full-stack role, building something interesting, or just want to say hi? Send me a note and I'll reply.",
 }
@@ -79,13 +103,21 @@ export const CONTACT_FORM = {
 // awakeFrom to awakeUntil (24-hour clock) it says you'll reply in the morning.
 export const HOME_TIME = { city: 'Tempe', timeZone: 'America/Phoenix', awakeFrom: 7, awakeUntil: 22 }
 
-export const CONTACT = [
+export const CONTACT: { label: string; href: string }[] = [
   { label: 'shreyanshrc01@gmail.com', href: 'mailto:shreyanshrc01@gmail.com' },
   { label: 'LinkedIn', href: 'https://linkedin.com/in/shreyanshraj' },
   { label: 'GitHub', href: 'https://github.com/shreyanshraj' },
 ]
 
-export const PROJECTS = [
+export interface Project {
+  id: string
+  name: string
+  summary: string
+  stack: string
+  status?: string
+  link?: string
+}
+export const PROJECTS: Project[] = [
   {
     id: 'pantry',
     name: 'Pitchfork Pantry',
@@ -121,13 +153,21 @@ export const PROJECTS = [
 // Image files for the two posters above the TV. Leave as null to show the
 // original painted prints. To use your own, put the images in public/posters/
 // and set e.g. show: 'posters/my-show.jpg'. Any size works; it's cropped to fit.
-export const POSTER_IMAGES = {
+export const POSTER_IMAGES: { show: string | null; game: string | null } = {
   show: null,
   game: null,
 }
 
 // The résumé page (#resume). Taken from the SDE2 full-stack résumé.
-export const RESUME = {
+interface Resume {
+  name: string
+  summary: string
+  experience: { company: string; title: string; dates: string; tech: string; bullets: string[] }[]
+  projects: { name: string; tech: string; note: string; link?: string; text: string }[]
+  education: { degree: string; school: string; dates: string }[]
+  skills: [label: string, list: string][]
+}
+export const RESUME: Resume = {
   name: 'Shreyansh Raj',
   summary:
     'Software engineer with 5+ years building distributed systems, cloud services and microservices, and the web and mobile apps that run on them. Designs event-driven, auto-scaling backends on AWS (Lambda, SQS, S3, DynamoDB) and Firebase, builds REST APIs and data pipelines in Python and TypeScript, and ships product features in React and React Native. Owns work from design through production, works directly with stakeholders and designers, and mentors junior engineers. AWS Certified Developer – Associate.',

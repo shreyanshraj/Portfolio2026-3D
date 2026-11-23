@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
   publicDir: mode === 'inline' ? false : 'public',
   resolve: {
     alias: {
-      '@model-source': fileURLToPath(new URL(`./src/scene/sources/${mode === 'inline' ? 'inline' : 'url'}.js`, import.meta.url)),
+      '@model-source': fileURLToPath(new URL(`./src/scene/sources/${mode === 'inline' ? 'inline' : 'url'}.ts`, import.meta.url)),
     },
   },
 }))

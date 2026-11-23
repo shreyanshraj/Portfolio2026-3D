@@ -1,13 +1,18 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Bubble } from './ui/Bubble'
+import type { BubbleAction } from './ui/Bubble'
 import { ProjectPanel } from './ui/ProjectPanel'
 import { Resume } from './ui/Resume'
 import { ContactPanel } from './ui/ContactPanel'
 import { OBJECTS, ROLES } from './content'
+import type { ObjectId } from './content'
+import type { View } from './scene/Experience'
 import { initialPhase, phaseAt } from './clock'
 
 // Which side of the object its speech bubble opens on.
-const BUBBLE_SIDE = { raj: 'right', laptop: 'right', coffee: 'right', books: 'right', medals: 'right', tv: 'left', door: 'left', showPoster: 'left', gamePoster: 'right' }
+// (The window has none: clicking it opens or closes it instead.)
+const BUBBLE_SIDE: Partial<Record<ObjectId, 'left' | 'right'>> = { raj: 'right', laptop: 'right', coffee: 'right', books: 'right', medals: 'right', tv: 'left', door: 'left', showPoster: 'left', gamePoster: 'right' }
 
 // The 3D scene is split out so the résumé view never downloads three.js.
 const Experience = lazy(() => import('./scene/Experience'))
@@ -25,7 +30,7 @@ function hasWebGL() {
 
 // If the room can't be shown (no WebGL, a model that failed to load, a crash
 // in the scene), visitors get a short note and the résumé instead of a blank page.
-function RoomFallback({ onContact }) {
+function RoomFallback({ onContact }: { onContact: () => void }) {
   return (
     <div className="room-fallback" role="alert">
       <h1>The room didn't load on this device.</h1>
@@ -42,12 +47,12 @@ function RoomFallback({ onContact }) {
   )
 }
 
-class SceneBoundary extends Component {
+class SceneBoundary extends Component<{ onError: () => void; children: ReactNode }, { failed: boolean }> {
   state = { failed: false }
   static getDerivedStateFromError() {
     return { failed: true }
   }
-  componentDidCatch(error) {
+  componentDidCatch(error: Error) {
     console.error('The 3D room failed to load:', error)
     this.props.onError()
   }
@@ -105,7 +110,7 @@ function RoleTicker() {
   const word = ROLES[i]
   useEffect(() => {
     if (reduce) return
-    let t
+    let t: ReturnType<typeof setTimeout>
     if (!erasing && n < word.length) t = setTimeout(() => setN(n + 1), 70)
     else if (!erasing) t = setTimeout(() => setErasing(true), 1900)
     else if (n > 0) t = setTimeout(() => setN(n - 1), 35)
@@ -137,10 +142,10 @@ export default function App() {
 
 function Home() {
   const narrow = useNarrow()
-  const backdrop = useRef()
-  const overlay = useRef()
-  const [picked, setPicked] = useState(null)
-  const [view, setView] = useState('room')
+  const backdrop = useRef<HTMLDivElement>(null)
+  const overlay = useRef<HTMLDivElement>(null)
+  const [picked, setPicked] = useState<ObjectId | null>(null)
+  const [view, setView] = useState<View>('room')
   const [project, setProject] = useState('pantry')
   const [contactOpen, setContactOpen] = useState(false)
   const [failed, setFailed] = useState(() => !hasWebGL())
@@ -156,10 +161,10 @@ function Home() {
   // hotspot buttons always open; clicking the object itself again closes it
   // The window has no bubble: a click opens or closes it. That choice holds
   // until the time of day next changes, then the window follows the clock again.
-  const [windowOpen, setWindowOpen] = useState(null)
+  const [windowOpen, setWindowOpen] = useState<boolean | null>(null)
   useEffect(() => setWindowOpen(null), [phase])
   const pick = useCallback(
-    (id, open) => {
+    (id: ObjectId, open?: boolean) => {
       if (OBJECTS[id]?.toggle) {
         setWindowOpen((w) => !(w ?? phase !== 'night'))
         return
@@ -169,7 +174,7 @@ function Home() {
     [phase]
   )
   const close = useCallback(() => setPicked(null), [])
-  const action = useCallback((a) => {
+  const action = useCallback((a: BubbleAction) => {
     if (a.kind === 'message') {
       setPicked(null)
       setContactOpen(true)
@@ -182,7 +187,7 @@ function Home() {
   }, [])
 
   useEffect(() => {
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       if (contactOpen) setContactOpen(false)
       else if (picked) setPicked(null)
@@ -237,7 +242,8 @@ function Home() {
       <div ref={overlay} className="overlay">
         {view === 'room' &&
           !failed &&
-          Object.keys(OBJECTS).map((id) => (
+          // Object.keys is typed string[]; these are the literal keys of OBJECTS
+          (Object.keys(OBJECTS) as ObjectId[]).map((id) => (
             <div key={id} className="anchor" data-anchor={id}>
               <button
                 className={`spot${picked === id ? ' is-lit' : ''}`}

@@ -1,5 +1,7 @@
-import { forwardRef, useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import type { Dispatch, ReactNode, Ref, SetStateAction } from 'react'
 import { useFrame } from '@react-three/fiber'
+import type { ThreeElements } from '@react-three/fiber'
 import * as THREE from 'three'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { Model, useModel } from './Model'
@@ -8,17 +10,22 @@ import { paintOutside, paintDoorView } from './timeOfDay'
 import { Steam, ScreenVideo, tvScreen, Laptop, Poster, DigitalClock, Rug, FloorLamp, Gamepad, FlatBook, MedalCase, Desk, DeskTrackLight } from './Decor'
 import { GLOW } from './timeOfDay'
 import { POSTER_IMAGES } from '../content'
+import type { ObjectId } from '../content'
+import type { Phase } from '../clock'
+
+type Vec3 = [number, number, number]
+type GroupProps = ThreeElements['group']
 
 // Room footprint: x runs along the right-hand wall (bookshelf, TV, door),
 // z runs along the left-hand wall (window, desk). The back corner is the origin.
 export const R = 2.4
 const HALF = Math.PI / 2
 const DESK_Y = 0.384
-const RAJ_POS = [0.62, 0.23 + 0.034, 1.47] // 0.034 = lift from the chair's casters
+const RAJ_POS: Vec3 = [0.62, 0.23 + 0.034, 1.47] // 0.034 = lift from the chair's casters
 const RAJ_SCALE = 0.56
 const TORSO_STRETCH = 2.0
 // floor lamp position (centre of its base); Lighting hangs a point light at its shade
-export const LAMP = [2.28, 0, 1.7]
+export const LAMP: Vec3 = [2.28, 0, 1.7]
 const WAINSCOT = 0.36
 // Caster wheels under the desk chair. The chair is lifted by CASTER_H so its
 // five legs rest on them. LEG_TIPS are the ends of the legs in room space
@@ -29,20 +36,20 @@ const LEG_TIPS = [[0.73, 1.383], [0.73, 1.552], [0.569, 1.6045], [0.47, 1.4675],
 const TABLE_Y = 0.23 // coffee table top
 const TABLE_Z = 0.48 // coffee table's edge nearest the TV; the books and plant follow it
 const MUG_COLOR = '#E0A43A'
-const MUG_REST = [0.2, DESK_Y, 1.83] // the mug's spot on the desk
+const MUG_REST: Vec3 = [0.2, DESK_Y, 1.83] // the mug's spot on the desk
 const COFFEE_COLOR = '#4B2A16'
 // the row of prints over the desk: one height, one size, evenly spaced along z
-const DESK_ART = { y: 0.78, size: [0.24, 0.32], z: [1.36, 1.68, 2.0] }
+const DESK_ART: { y: number; size: [number, number]; z: number[] } = { y: 0.78, size: [0.24, 0.32], z: [1.36, 1.68, 2.0] }
 // Kenney's sofa back is low; lift every vertex above the armrests (only the
 // back cushion reaches that high) to make it taller.
 // Lengthen the coffee table by sliding each end outward; the legs keep their
 // thickness because the vertices move rather than scale.
-const widenTable = (g) => {
+const widenTable = (g: THREE.BufferGeometry) => {
   const pos = g.attributes.position
   for (let i = 0; i < pos.count; i++) pos.setX(i, pos.getX(i) + (pos.getX(i) > -0.13 ? 0.11 : -0.11))
   pos.needsUpdate = true
 }
-const raiseSofaBack = (g) => {
+const raiseSofaBack = (g: THREE.BufferGeometry) => {
   const pos = g.attributes.position
   for (let i = 0; i < pos.count; i++) if (pos.getY(i) > 0.4) pos.setY(i, pos.getY(i) + 0.12)
   pos.needsUpdate = true
@@ -50,17 +57,17 @@ const raiseSofaBack = (g) => {
 // tops of the bookcase's shelf boards, measured from the model
 const SHELVES = [0.13, 0.37, 0.61, 0.88]
 // the TV's screen face, where the video plays
-const TV = { at: [1.161, 0.548, 0.141], w: 0.53, h: 0.28 }
+const TV: { at: Vec3; w: number; h: number } = { at: [1.161, 0.548, 0.141], w: 0.53, h: 0.28 }
 const SAGE = '#AEB8A0'
 export const H = 1.25
 const T = 0.05
 export const DOOR = { x0: 1.62, x1: 2.28, y1: 1.12 }
 const WIN = { z0: 0.3, z1: 1.0, y0: 0.45, y1: 1.0 }
 // how far the window sashes swing open (radians) for each time of day
-const WINDOW_OPEN = { morning: 0.7, day: 0.9, evening: 0.3, night: 0 }
+const WINDOW_OPEN: Record<Phase, number> = { morning: 0.7, day: 0.9, evening: 0.3, night: 0 }
 
 // World-space anchors for hotspots and speech bubbles.
-export const ANCHORS = {
+export const ANCHORS: Record<ObjectId, Vec3> = {
   raj: [0.6, 0.74, 1.47],
   laptop: [0.13, 0.5, 1.47],
   coffee: [0.2, 0.45, 1.83],
@@ -73,9 +80,17 @@ export const ANCHORS = {
   window: [0.02, 0.74, 0.65],
 }
 
-function Box({ from, to, color = C.plaster, cast = true, ...rest }) {
-  const size = to.map((v, i) => v - from[i])
-  const pos = to.map((v, i) => (v + from[i]) / 2)
+interface BoxProps extends Omit<ThreeElements['mesh'], 'from' | 'to'> {
+  from: Vec3
+  to: Vec3
+  color?: string
+  cast?: boolean
+}
+
+function Box({ from, to, color = C.plaster, cast = true, ...rest }: BoxProps) {
+  // map keeps the tuple's length; TypeScript only knows it returns number[]
+  const size = to.map((v, i) => v - from[i]) as Vec3
+  const pos = to.map((v, i) => (v + from[i]) / 2) as Vec3
   return (
     <mesh position={pos} castShadow={cast} receiveShadow {...rest}>
       <boxGeometry args={size} />
@@ -86,9 +101,10 @@ function Box({ from, to, color = C.plaster, cast = true, ...rest }) {
 
 // Invisible geometry that only blocks sunlight, so the sun reaches the room
 // through the glass door and nowhere else.
-function ShadowOnly({ from, to }) {
-  const size = to.map((v, i) => v - from[i])
-  const pos = to.map((v, i) => (v + from[i]) / 2)
+function ShadowOnly({ from, to }: { from: Vec3; to: Vec3 }) {
+  // map keeps the tuple's length; TypeScript only knows it returns number[]
+  const size = to.map((v, i) => v - from[i]) as Vec3
+  const pos = to.map((v, i) => (v + from[i]) / 2) as Vec3
   return (
     <mesh position={pos} castShadow>
       <boxGeometry args={size} />
@@ -101,7 +117,7 @@ function ShadowOnly({ from, to }) {
 export const windowView = new THREE.MeshBasicMaterial({ toneMapped: false })
 export const doorView = new THREE.MeshBasicMaterial({ toneMapped: false })
 
-function paintInto(material, paint, phase, w, h) {
+function paintInto(material: THREE.MeshBasicMaterial, paint: (phase: Phase, c: HTMLCanvasElement) => void, phase: Phase, w: number, h: number) {
   const c = document.createElement('canvas')
   c.width = w
   c.height = h
@@ -113,14 +129,14 @@ function paintInto(material, paint, phase, w, h) {
   material.needsUpdate = true
 }
 
-function useOutsideViews(phase) {
+function useOutsideViews(phase: Phase) {
   useMemo(() => {
     paintInto(windowView, paintOutside, phase, 256, 256)
     paintInto(doorView, paintDoorView, phase, 256, 416)
   }, [phase])
 }
 
-function Shell({ phase, windowOpen, p }) {
+function Shell({ phase, windowOpen, p }: { phase: Phase; windowOpen: boolean | null; p: PickState }) {
   useOutsideViews(phase)
   return (
     <group>
@@ -181,14 +197,14 @@ function Shell({ phase, windowOpen, p }) {
 // The window in the left wall: lined reveal, painted casing and apron, a
 // frame with two casement sashes (glass, a glazing bar each, a latch), and
 // linen curtains on a rod. Everything is in room space on the x = 0 wall.
-function WindowDetail({ phase, manual, p }) {
+function WindowDetail({ phase, manual, p }: { phase: Phase; manual: boolean | null; p: PickState }) {
   const { z0, z1, y0, y1 } = WIN
   const white = '#F3F1EA'
   const frame = '#E9E6DE'
   const zm = (z0 + z1) / 2
   const GX = -0.026 // depth of the glass inside the wall
   const S = 0.022 // sash bar width
-  const sash = (za, zb) => {
+  const sash = (za: number, zb: number) => {
     const zc = (za + zb) / 2
     return (
       <>
@@ -205,8 +221,8 @@ function WindowDetail({ phase, manual, p }) {
     )
   }
   // How far the sashes swing out: open in the day, shut at night.
-  const left = useRef()
-  const right = useRef()
+  const left = useRef<THREE.Group>(null)
+  const right = useRef<THREE.Group>(null)
   const reduce = useReducedMotion()
   useFrame((_, dt) => {
     // a visitor's click wins over the time of day until the mood next changes
@@ -214,12 +230,14 @@ function WindowDetail({ phase, manual, p }) {
     const open = manual === null || manual === undefined ? auto : manual ? auto || WINDOW_OPEN.morning : 0
     const target = -open // negative swings out, away from the room
     const k = reduce ? 1 : 1 - Math.exp(-dt * 1.5)
-    left.current.rotation.y += (target - left.current.rotation.y) * k
-    right.current.rotation.y = -left.current.rotation.y
+    // `!`: both sash groups are mounted before the first frame
+    const l = left.current!, r = right.current!
+    l.rotation.y += (target - l.rotation.y) * k
+    r.rotation.y = -l.rotation.y
   })
   const half = (z1 - z0) / 2 - 0.008
   // a curtain panel: a flat backing with soft vertical folds in front of it
-  const curtain = (za, zb) => {
+  const curtain = (za: number, zb: number) => {
     const folds = 5
     const w = (zb - za) / folds
     const top = y1 + 0.06
@@ -308,13 +326,14 @@ function ChairCasters() {
   )
 }
 
-function GlassDoor({ open }) {
-  const slide = useRef()
+function GlassDoor({ open }: { open: boolean }) {
+  const slide = useRef<THREE.Group>(null)
   const reduce = useReducedMotion()
   useFrame((_, dt) => {
     const target = open ? -0.3 : 0
     const k = reduce ? 1 : 1 - Math.exp(-dt * 5)
-    slide.current.position.x += (target - slide.current.position.x) * k
+    const s = slide.current! // mounted before the first frame
+    s.position.x += (target - s.position.x) * k
   })
   const w = (DOOR.x1 - DOOR.x0) / 2
   const frame = C.ink
@@ -349,7 +368,7 @@ function GlassDoor({ open }) {
 }
 
 // A glazed mug. Its handle points along +x, so turn the mug to show it.
-const Mug = forwardRef(function Mug({ color = MUG_COLOR, ...props }, ref) {
+function Mug({ ref, color = MUG_COLOR, ...props }: { ref?: Ref<THREE.Group>; color?: string } & GroupProps) {
   return (
     <group ref={ref} {...props}>
       <mesh castShadow receiveShadow position={[0, 0.03, 0]}>
@@ -372,9 +391,9 @@ const Mug = forwardRef(function Mug({ color = MUG_COLOR, ...props }, ref) {
       </mesh>
     </group>
   )
-})
+}
 
-function Xbox(props) {
+function Xbox(props: GroupProps) {
   return (
     <group {...props}>
       <mesh castShadow receiveShadow position={[0, 0.075, 0]}>
@@ -389,18 +408,20 @@ function Xbox(props) {
   )
 }
 
-function Raj(props) {
+function Raj(props: GroupProps) {
   const { scene, animations } = useModel('raj')
   const clone = useMemo(() => {
     const c = SkeletonUtils.clone(scene)
     c.traverse((o) => {
-      if (o.isMesh) {
+      if (o instanceof THREE.Mesh) {
         o.castShadow = true
         o.receiveShadow = true
         if (o.material) {
-          o.material = o.material.clone()
-          o.material.roughness = 0.9
-          o.material.metalness = 0
+          // raj.glb has one standard material per mesh
+          const m = (o.material as THREE.MeshStandardMaterial).clone()
+          o.material = m
+          m.roughness = 0.9
+          m.metalness = 0
         }
       }
     })
@@ -429,8 +450,9 @@ function Raj(props) {
     const { torso, head, arms } = bones
     if (!torso) return
     torso.scale.y = TORSO_STRETCH
-    head.scale.y = 1 / TORSO_STRETCH
-    for (const a of arms) a.scale.y = 1 / Math.sqrt(TORSO_STRETCH) // arms get a little longer, not stretched as far
+    // `!`: raj.glb has all of these bones whenever it has a torso
+    head!.scale.y = 1 / TORSO_STRETCH
+    for (const a of arms) a!.scale.y = 1 / Math.sqrt(TORSO_STRETCH) // arms get a little longer, not stretched as far
   })
 
   return (
@@ -450,35 +472,48 @@ export function useReducedMotion() {
   }, [])
 }
 
+// Hover and pick state, passed through to every Pickable.
+interface PickState {
+  picked: ObjectId | null
+  hovered: ObjectId | null
+  setHovered: Dispatch<SetStateAction<ObjectId | null>>
+  onPick: (id: ObjectId) => void
+}
+
 // Each clickable object. Glows gold on hover, brighter when picked.
-function Pickable({ id, picked, hovered, setHovered, onPick, children }) {
-  const ref = useRef()
-  const mats = useRef([])
+function Pickable({ id, picked, hovered, setHovered, onPick, children }: PickState & { id: ObjectId; children: ReactNode }) {
+  const ref = useRef<THREE.Group>(null)
+  const mats = useRef<THREE.MeshStandardMaterial[]>([])
   useEffect(() => {
-    const list = []
-    ref.current.traverse((o) => {
-      if (o.isMesh && o.material && 'emissive' in o.material) list.push(o.material)
+    const list: THREE.MeshStandardMaterial[] = []
+    // `!`: effects run after mount, when the group is set
+    ref.current!.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        if (m instanceof THREE.MeshStandardMaterial) list.push(m)
+      }
     })
     mats.current = list
   }, [])
   const gold = useMemo(() => new THREE.Color(C.sun), [])
   const amt = useRef(0)
-  const saved = useRef(null)
+  const saved = useRef<[THREE.Color, number][] | null>(null)
   useFrame((_, dt) => {
     const target = picked === id ? 0.28 : hovered === id ? 0.18 : 0
     amt.current += (target - amt.current) * (1 - Math.exp(-dt * 10))
     const active = amt.current > 0.002
     if (active) {
       // remember each material's own glow (lamp, screen) so we can hand it back
-      if (!saved.current) saved.current = mats.current.map((m) => [m.emissive.clone(), m.emissiveIntensity])
+      const own = (saved.current ??= mats.current.map((m) => [m.emissive.clone(), m.emissiveIntensity]))
       mats.current.forEach((m, i) => {
-        m.emissive.copy(saved.current[i][0]).lerp(gold, Math.min(1, amt.current * 6))
-        m.emissiveIntensity = Math.max(saved.current[i][1] * (1 - amt.current * 3), amt.current)
+        m.emissive.copy(own[i][0]).lerp(gold, Math.min(1, amt.current * 6))
+        m.emissiveIntensity = Math.max(own[i][1] * (1 - amt.current * 3), amt.current)
       })
     } else if (saved.current) {
+      const own = saved.current
       mats.current.forEach((m, i) => {
-        m.emissive.copy(saved.current[i][0])
-        m.emissiveIntensity = saved.current[i][1]
+        m.emissive.copy(own[i][0])
+        m.emissiveIntensity = own[i][1]
       })
       saved.current = null
     }
@@ -505,8 +540,14 @@ function Pickable({ id, picked, hovered, setHovered, onPick, children }) {
   )
 }
 
-export function Room({ picked, hovered, setHovered, onPick, doorOpen, phase, windowOpen }) {
-  const p = { picked, hovered, setHovered, onPick }
+interface RoomProps extends PickState {
+  doorOpen: boolean
+  phase: Phase
+  windowOpen: boolean | null
+}
+
+export function Room({ picked, hovered, setHovered, onPick, doorOpen, phase, windowOpen }: RoomProps) {
+  const p: PickState = { picked, hovered, setHovered, onPick }
   return (
     <group>
       <Shell phase={phase} windowOpen={windowOpen} p={p} />

@@ -127,7 +127,7 @@ a:hover { color: var(--ink); }
 }
 .side-right .bubble { border-bottom-left-radius: 4px; }
 .side-left .bubble { border-bottom-right-radius: 4px; }
-/* once placed (Experience.jsx), the pointed corner is the one nearest the object */
+/* once placed (Experience.tsx), the pointed corner is the one nearest the object */
 .bubble-anchor[data-tail] .bubble { border-radius: 18px; }
 .bubble-anchor[data-tail='top-left'] .bubble { border-top-left-radius: 4px; }
 .bubble-anchor[data-tail='top-right'] .bubble { border-top-right-radius: 4px; }

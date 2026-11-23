@@ -12,7 +12,7 @@ export const C = {
 }
 
 // Kenney material name -> colour, used unless a model overrides it.
-export const BASE = {
+export const BASE: Record<string, string> = {
   wood: '#B39672',
   woodDark: '#8E7356',
   metal: '#B7BDC6',

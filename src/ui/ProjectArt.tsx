@@ -1,5 +1,6 @@
 // Original illustrations for projects that have no public screenshots
 // (internal tools). Plain SVG in the room's palette: no logos, no downloads.
+import type { ComponentType, ReactNode } from 'react'
 
 const INK = '#2E3550'
 const SAGE = '#5E7A5A'
@@ -48,11 +49,11 @@ export function MigrationArt() {
       <text x="273" y="93" textAnchor="middle" style={{ ...small, fill: SUN }}>upload time</text>
       <rect x="22" y="124" width="280" height="62" rx="6" fill={PAPER} />
       <text x="32" y="138" style={{ ...label, fill: INK, fontWeight: 700 }}>Reconciliation report</text>
-      {[
+      {([
         ['Batch 0412', '250,000', true],
         ['Batch 0413', '250,000', true],
         ['Batch 0414', '249,996', false],
-      ].map(([batch, count, ok], i) => (
+      ] as const).map(([batch, count, ok], i) => (
         <g key={batch} transform={`translate(32 ${150 + i * 11})`}>
           <text x="0" y="0" style={{ ...small, fill: INK }}>{batch}</text>
           <text x="80" y="0" style={{ ...small, fill: INK }}>{count} records</text>
@@ -74,10 +75,10 @@ export function CctvArt() {
       <rect x="16" y="96" width="168" height="32" fill="#353E60" />
       <circle cx="28" cy="27" r="3" fill={RUST} />
       <text x="36" y="30" style={small}>CAM 03, live</text>
-      {[
+      {([
         [64, 62, 'Match 0.97', SUN],
         [132, 68, 'Unknown', SOFT],
-      ].map(([x, y, tag, c]) => (
+      ] as const).map(([x, y, tag, c]) => (
         <g key={x}>
           <circle cx={x} cy={y} r="11" fill="#8E9DB4" />
           <path d={`M${x - 18} ${y + 40} q18 -30 36 0 z`} fill="#6B7A94" />
@@ -86,13 +87,13 @@ export function CctvArt() {
           <text x={x - 12} y={y - 17.5} style={{ ...small, fill: INK, fontWeight: 700 }}>{tag}</text>
         </g>
       ))}
-      {[
+      {([
         ['Cameras', 22],
         ['EC2', 48],
         ['SQS queue', 74],
         ['Lambda', 100],
         ['S3 results', 126],
-      ].map(([name, y], i, all) => (
+      ] as const).map(([name, y], i, all) => (
         <g key={name}>
           <rect x="204" y={y - 6} width="100" height="18" rx="5" fill={i === 3 ? SAGE : '#3A4566'} />
           <text x="254" y={y + 6} textAnchor="middle" style={{ ...label, fontSize: 8.5 }}>{name}</text>
@@ -112,7 +113,7 @@ export function CctvArt() {
 // Two phones: a student checking in by QR code, and the volunteer's queue
 // view, with the check-in time and reach underneath.
 export function PantryArt() {
-  const phone = (x, children) => (
+  const phone = (x: number, children: ReactNode) => (
     <g transform={`translate(${x} 14)`}>
       <rect width="84" height="150" rx="12" fill="#11162C" />
       <rect x="5" y="9" width="74" height="132" rx="6" fill={PAPER} />
@@ -123,7 +124,7 @@ export function PantryArt() {
   // a decorative QR code (encodes nothing): three corner finder squares and a
   // fixed scatter of modules on a 21 x 21 grid
   const N = 21
-  const finder = (r, c) => {
+  const finder = (r: number, c: number) => {
     for (const [fr, fc] of [[0, 0], [0, N - 7], [N - 7, 0]]) {
       const y = r - fr, x = c - fc
       if (y >= -1 && y <= 7 && x >= -1 && x <= 7) {
@@ -133,7 +134,7 @@ export function PantryArt() {
     }
     return -1
   }
-  const qr = []
+  const qr: [number, number][] = []
   for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
     const f = finder(r, c)
     if (f === 1 || (f === -1 && ((r * 37 + c * 91 + r * c * 13) % 7) < 3)) qr.push([r, c])
@@ -193,7 +194,7 @@ export function PantryArt() {
 // A city street grid with cab trips traced across it (busier routes warmer),
 // pickup hot spots, and an hourly demand chart beside the headline numbers.
 export function CabArt() {
-  const trips = [
+  const trips: [d: string, color: string, width: number][] = [
     ['M20 150 L60 150 L60 110 L120 110 L120 60 L170 60', SUN, 2.2],
     ['M30 40 L30 80 L90 80 L90 130 L150 130 L150 170', RUST, 1.8],
     ['M180 30 L140 30 L140 90 L70 90 L70 170', SUN, 1.6],
@@ -242,4 +243,4 @@ export function CabArt() {
   )
 }
 
-export const PROJECT_ART = { pantry: PantryArt, cab: CabArt, migration: MigrationArt, cctv: CctvArt }
+export const PROJECT_ART: Record<string, ComponentType> = { pantry: PantryArt, cab: CabArt, migration: MigrationArt, cctv: CctvArt }

@@ -18,8 +18,8 @@ const vite = await createServer({
   logLevel: 'error',
   define: { 'import.meta.env.BASE_URL': JSON.stringify('./') },
 })
-const { Resume } = await vite.ssrLoadModule('/src/ui/Resume.jsx')
-const { RESUME } = await vite.ssrLoadModule('/src/content.js')
+const { Resume } = await vite.ssrLoadModule('/src/ui/Resume.tsx')
+const { RESUME } = await vite.ssrLoadModule('/src/content.ts')
 const body = renderToStaticMarkup(createElement(Resume, { roomHref: './' }))
 await vite.close()
 

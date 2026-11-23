@@ -7,28 +7,30 @@ const EMAIL = CONTACT.find((c) => c.href.startsWith('mailto:'))?.label
 // button, and links. If CONTACT_FORM.endpoint is set (e.g. a Formspree form),
 // messages are posted there; otherwise Send opens the visitor's email app with
 // the message filled in.
-export function ContactPanel({ onClose }) {
-  const first = useRef()
-  const panel = useRef()
-  const [status, setStatus] = useState('idle') // idle | sending | sent | error
+export function ContactPanel({ onClose }: { onClose: () => void }) {
+  const first = useRef<HTMLInputElement>(null)
+  const panel = useRef<HTMLElement>(null)
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [copied, setCopied] = useState(false)
 
   // Focus the first field on open, and hand focus back to whatever opened the
   // panel when it closes (or to the header button if that has gone, e.g. the
   // glass door's bubble closes as the panel opens).
   useEffect(() => {
-    const opener = document.activeElement
+    // focus() lives on HTMLElement; whatever had focus is one (or <body>)
+    const opener = document.activeElement as HTMLElement | null
     first.current?.focus()
     return () => {
-      const back = opener?.isConnected && opener !== document.body ? opener : document.querySelector('.top-actions .btn')
+      const back = opener?.isConnected && opener !== document.body ? opener : document.querySelector<HTMLElement>('.top-actions .btn')
       back?.focus({ preventScroll: true })
     }
   }, [])
 
   // Keep Tab and Shift+Tab inside the panel while it's open.
-  function trapTab(e) {
+  function trapTab(e: React.KeyboardEvent) {
     if (e.key !== 'Tab') return
-    const items = [...panel.current.querySelectorAll('a[href], button:not([disabled]), input:not([tabindex="-1"]), textarea')]
+    // `!`: this handler is on the panel element itself, so the ref is set
+    const items = [...panel.current!.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([tabindex="-1"]), textarea')]
     if (!items.length) return
     const firstItem = items[0], lastItem = items[items.length - 1]
     if (e.shiftKey && document.activeElement === firstItem) {
@@ -40,7 +42,7 @@ export function ContactPanel({ onClose }) {
     }
   }
 
-  async function submit(e) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const data = Object.fromEntries(new FormData(e.currentTarget))
     // the hidden honeypot field is only ever filled in by bots: drop the
@@ -71,7 +73,8 @@ export function ContactPanel({ onClose }) {
 
   async function copyEmail() {
     try {
-      await navigator.clipboard.writeText(EMAIL)
+      // `!`: CONTACT always has a mailto entry
+      await navigator.clipboard.writeText(EMAIL!)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {

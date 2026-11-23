@@ -6,10 +6,10 @@ import { CONTACT, RESUME } from '../content'
 const PDF_URL = import.meta.env.MODE === 'inline' ? null : `${import.meta.env.BASE_URL}resume/Shreyansh_Raj_Resume.pdf`
 
 // The plain recruiter view: no 3D, loads instantly, prints cleanly.
-// All of its text lives in RESUME in src/content.js.
+// All of its text lives in RESUME in src/content.ts.
 // The app shows it at #resume; scripts/prerender-resume.mjs also renders it to a
 // static resume.html (no JavaScript) for search engines, with roomHref './'.
-export function Resume({ roomHref = '#room' }) {
+export function Resume({ roomHref = '#room' }: { roomHref?: string }) {
   useEffect(() => {
     document.title = `${RESUME.name}, résumé`
     window.scrollTo(0, 0)

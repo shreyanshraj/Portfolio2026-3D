@@ -1,18 +1,22 @@
 import { useEffect, useMemo, useRef } from 'react'
+import type { RefObject } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { C } from './palette'
 import { DOOR, ANCHORS, LAMP, useReducedMotion, windowView, doorView } from './Room'
-import { DIM, PRESETS, GLOW, LIGHTS } from './timeOfDay'
+import { DIM, PRESETS, GLOW, LIGHTS, NUMS, COLS } from './timeOfDay'
+import type { Live, Preset } from './timeOfDay'
+import type { Phase } from '../clock'
+import type { ObjectId } from '../content'
 import { tvScreen, laptopScreen } from './Decor'
 
 const DURATION = 2.4 // seconds for the opening light-up
 const MOOD_CHANGE = 4 // seconds to cross-fade if the clock ticks into a new mood
-const ease = (t) => t * t * (3 - 2 * t)
+const ease = (t: number) => t * t * (3 - 2 * t)
 const DOOR_TOP = new THREE.Vector3((DOOR.x0 + DOOR.x1) / 2, DOOR.y1, 0)
 
 // Preset values as THREE objects, so blending allocates nothing per frame.
-function toLive(p) {
+function toLive(p: Preset): Live {
   return {
     ...p,
     bg: new THREE.Color(p.bg), sky: new THREE.Color(p.sky), ground: new THREE.Color(p.ground),
@@ -20,10 +24,8 @@ function toLive(p) {
     target: p.target.clone(),
   }
 }
-const NUMS = ['hemi', 'fill', 'sunInt', 'beam', 'lamp', 'screen', 'tv', 'desk', 'bias', 'shelf']
-const COLS = ['bg', 'sky', 'ground', 'sun', 'beamColor', 'outside']
-const cloneLive = (l) => ({ ...l, ...Object.fromEntries(COLS.map((k) => [k, l[k].clone()])), target: l.target.clone() })
-function mix(out, a, b, t) {
+const cloneLive = (l: Live): Live => ({ ...l, ...Object.fromEntries(COLS.map((k) => [k, l[k].clone()])), target: l.target.clone() })
+function mix(out: Live, a: Live, b: Live, t: number) {
   for (const k of NUMS) out[k] = a[k] + (b[k] - a[k]) * t
   for (const k of COLS) out[k].copy(a[k]).lerp(b[k], t)
   out.target.copy(a.target).lerp(b.target, t)
@@ -43,7 +45,7 @@ function useBeam() {
     const c = new THREE.Vector3(DOOR.x1 - 0.03, 0, 0)
     const d = new THREE.Vector3(DOOR.x0 + 0.03, 0, 0)
     const a2 = new THREE.Vector3(), b2 = new THREE.Vector3()
-    const update = (dir) => {
+    const update = (dir: THREE.Vector3) => {
       a2.copy(a).addScaledVector(dir, -a.y / dir.y)
       b2.copy(b).addScaledVector(dir, -b.y / dir.y)
       const tris = [a, b, b2, a, b2, a2, d, a, a2, c, b, b2]
@@ -68,19 +70,27 @@ const beamMaterial = new THREE.ShaderMaterial({
     void main(){ gl_FragColor = vec4(uColor * uOpacity * (0.25 + 0.75*vA), 1.0); }`,
 })
 
-export function Lighting({ phase, picked, backdropRef, instant, lowPower }) {
+interface LightingProps {
+  phase: Phase
+  picked: ObjectId | null
+  backdropRef: RefObject<HTMLDivElement | null>
+  instant: boolean
+  lowPower: boolean
+}
+
+export function Lighting({ phase, picked, backdropRef, instant, lowPower }: LightingProps) {
   const reduce = useReducedMotion()
-  const sun = useRef()
+  const sun = useRef<THREE.DirectionalLight>(null)
   const sunTarget = useMemo(() => new THREE.Object3D(), [])
-  const hemi = useRef()
-  const fill = useRef()
-  const spot = useRef()
+  const hemi = useRef<THREE.HemisphereLight>(null)
+  const fill = useRef<THREE.DirectionalLight>(null)
+  const spot = useRef<THREE.SpotLight>(null)
   const spotTarget = useMemo(() => new THREE.Object3D(), [])
-  const lampLight = useRef()
-  const screenLight = useRef()
-  const tvLight = useRef()
-  const biasLight = useRef()
-  const shelfLight = useRef()
+  const lampLight = useRef<THREE.PointLight>(null)
+  const screenLight = useRef<THREE.PointLight>(null)
+  const tvLight = useRef<THREE.PointLight>(null)
+  const biasLight = useRef<THREE.PointLight>(null)
+  const shelfLight = useRef<THREE.PointLight>(null)
   const beam = useBeam()
 
   const dim = useMemo(() => toLive(DIM), [])
@@ -91,7 +101,7 @@ export function Lighting({ phase, picked, backdropRef, instant, lowPower }) {
   const mood = useMemo(() => toLive(PRESETS[phase]), []) // eslint-disable-line react-hooks/exhaustive-deps
   const intro = useRef(reduce || instant ? DURATION + 1 : -0.35)
   const dir = useMemo(() => new THREE.Vector3(), [])
-  const onLight = useRef(null)
+  const onLight = useRef<boolean | null>(null)
 
   // the clock moved into a new mood while the page was open: cross-fade to it
   const first = useRef(true)
@@ -106,6 +116,8 @@ export function Lighting({ phase, picked, backdropRef, instant, lowPower }) {
   }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useFrame((_, dt) => {
+    // every light is mounted before the first frame; this only satisfies the types
+    if (!sun.current || !hemi.current || !fill.current || !spot.current || !lampLight.current || !screenLight.current || !tvLight.current || !biasLight.current || !shelfLight.current) return
     const step = Math.min(dt, 0.1)
     intro.current += step
     blend.current = Math.min(1, blend.current + step / MOOD_CHANGE)

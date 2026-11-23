@@ -1,4 +1,4 @@
-# Every push and pull request: lint and run the smoke tests.
+# Every push and pull request: type-check, lint and run the smoke tests.
 # Deploys are handled by Vercel's Git integration (production from main,
 # a preview URL for every other branch and pull request).
 name: CI
@@ -21,6 +21,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run typecheck
       - run: npm run lint
       - run: npx playwright install --with-deps chromium
       - run: npm test

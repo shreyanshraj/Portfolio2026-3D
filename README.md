@@ -10,7 +10,7 @@ If the room can't be shown (WebGL turned off, a model that fails to load, a
 crash in the scene), visitors see a short note with links to the résumé and
 the contact form instead of a blank page.
 
-Built with React, Vite, three.js and React Three Fiber.
+Built with React, TypeScript, Vite, three.js and React Three Fiber.
 
 ## Run it
 
@@ -20,6 +20,7 @@ npm run dev      # http://localhost:5173
 npm run build    # static site in dist/ (plus the prerendered dist/resume.html)
 npm run build:inline  # same site with the models bundled into the JS (dist-inline/),
                       # for hosts that won't serve .glb files
+npm run typecheck  # TypeScript (tsc --noEmit)
 npm run lint     # ESLint
 npm test         # Playwright smoke tests against a production build
 ```
@@ -28,14 +29,14 @@ Before the first `npm test`, run `npx playwright install chromium` once.
 
 ## Tests and deploys
 
-`tests/smoke.spec.js` checks, on a desktop and a phone screen size: the room
+`tests/smoke.spec.ts` checks, on a desktop and a phone screen size: the room
 loads and a bubble opens, the fallback appears without WebGL or when a model
 fails to load, `#resume` renders, `resume.html` reads fine with JavaScript off,
 and the contact form posts to Formspree (the request is intercepted, so nothing
 is sent).
 
-`.github/workflows/ci.yml` runs lint and the tests on every push and pull
-request.
+`.github/workflows/ci.yml` runs the type check, lint and the tests on every
+push and pull request.
 
 ## Hosting (Vercel + Cloudflare DNS)
 
@@ -61,7 +62,7 @@ these files assume the site is at https://shreyanshraj.com/; change them, and
 
 Phones and machines with 4 or fewer CPU cores render at up to 1.5× pixel
 density (instead of 2×) with a 1024px shadow map (instead of 2048px). This is
-decided once on load in `src/scene/Experience.jsx`.
+decided once on load in `src/scene/Experience.tsx`.
 
 ## Time of day
 
@@ -77,32 +78,32 @@ The room follows the visitor's local clock:
 The clock is checked every minute, and the room fades across if the mood
 changes while someone has the page open. While developing, `?time=night` (or
 `morning`, `day`, `evening`) forces a mood and `?start=now` skips the opening
-light-up. Moods are tuned in `src/scene/timeOfDay.js`.
+light-up. Moods are tuned in `src/scene/timeOfDay.ts`.
 
 ## Contact form
 
 "Get in touch" (in the header, and in the glass door's bubble) opens a small
 form. Messages are posted to the Formspree form set as `CONTACT_FORM.endpoint`
-in `src/content.js`, which emails them to you. Set the endpoint to `null` and
+in `src/content.ts`, which emails them to you. Set the endpoint to `null` and
 Send opens the visitor's email app with their message filled in instead.
 
 ## Résumé PDF
 
 The "Download PDF" button on `#resume` serves `public/resume/Shreyansh_Raj_Resume.pdf`.
 Replace that file to update it; keep the same name or change `PDF_URL` in
-`src/ui/Resume.jsx`.
+`src/ui/Resume.tsx`.
 
 ## Where things live
 
 | What you want to change | File |
 |---|---|
-| Any text a visitor reads (bubbles, projects, contact links, the whole résumé page) | `src/content.js` |
-| The résumé page layout (its text is `RESUME` in `src/content.js`) | `src/ui/Resume.jsx` |
-| Furniture placement, the room, the door | `src/scene/Room.jsx` |
-| Light-up timing, sunbeam, the gold light on a clicked object | `src/scene/Lighting.jsx` |
-| Colours and light levels for each time of day | `src/scene/timeOfDay.js` |
-| Colours | `src/scene/palette.js` and the top of `src/styles.css` |
-| Camera framing and the zoom into the laptop | `src/scene/Experience.jsx` |
+| Any text a visitor reads (bubbles, projects, contact links, the whole résumé page) | `src/content.ts` |
+| The résumé page layout (its text is `RESUME` in `src/content.ts`) | `src/ui/Resume.tsx` |
+| Furniture placement, the room, the door | `src/scene/Room.tsx` |
+| Light-up timing, sunbeam, the gold light on a clicked object | `src/scene/Lighting.tsx` |
+| Colours and light levels for each time of day | `src/scene/timeOfDay.ts` |
+| Colours | `src/scene/palette.ts` and the top of `src/styles.css` |
+| Camera framing and the zoom into the laptop | `src/scene/Experience.tsx` |
 
 ### Placing a model
 
@@ -122,7 +123,7 @@ runs along the left-hand wall (window, desk). Both go from 0 to 2.4.
 ## Posters
 
 The two posters above the TV can show any image: put the files in
-`public/posters/` and set their paths in `POSTER_IMAGES` in `src/content.js`.
+`public/posters/` and set their paths in `POSTER_IMAGES` in `src/content.ts`.
 Images are cropped to fit the frame. Until then they show original painted
 prints (a cook's flat-lay and a gamepad). Only use artwork you have the rights
 to show on a public site.
@@ -149,10 +150,10 @@ still nice:
   seated figure, `public/models/raj.glb`, "Male C" with its `sit` animation)
 
 The mug, the Xbox, the walls, the window and the sliding glass door are built in
-code (`src/scene/Room.jsx`). The desk, laptop, rug, floor lamp, posters, 24-hour
-digital clock, coffee steam and screen videos are in `src/scene/Decor.jsx`; the posters are
+code (`src/scene/Room.tsx`). The desk, laptop, rug, floor lamp, posters, 24-hour
+digital clock, coffee steam and screen videos are in `src/scene/Decor.tsx`; the posters are
 original art painted in code, and the clock shows the visitor's real time. The two outside views are painted in code too
-(`src/scene/timeOfDay.js`): the window looks out on a distant ridge, and the
+(`src/scene/timeOfDay.ts`): the window looks out on a distant ridge, and the
 glass door opens onto a small walled garden with a lawn, a stone path, flowers
 and a citrus tree.
 

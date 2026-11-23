@@ -3,4 +3,4 @@ import App from './App'
 import './styles.css'
 
 // No StrictMode: its double mount leaves drei's first <Html> overlay empty.
-createRoot(document.getElementById('root')).render(<App />)
+createRoot(document.getElementById('root')!).render(<App />)

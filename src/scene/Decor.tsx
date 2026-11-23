@@ -1,13 +1,26 @@
-import { forwardRef, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode, Ref } from 'react'
 import { useFrame } from '@react-three/fiber'
+import type { ThreeElements } from '@react-three/fiber'
 import * as THREE from 'three'
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import { C } from './palette'
 import { getVideoUrl } from '@model-source'
 import { GLOW, LIGHTS } from './timeOfDay'
+import { ctx2d } from './canvas'
+
+type Vec3 = [number, number, number]
+type GroupProps = ThreeElements['group']
+type Paint = (g: CanvasRenderingContext2D, w: number, h: number) => void
 
 // A box with rounded edges (stands in for drei's RoundedBox).
-function RoundedBox({ args: [w, h, d], radius, smoothness = 3, children, ...props }) {
+interface RoundedBoxProps extends Omit<ThreeElements['mesh'], 'args'> {
+  args: Vec3
+  radius: number
+  smoothness?: number
+  children?: ReactNode
+}
+function RoundedBox({ args: [w, h, d], radius, smoothness = 3, children, ...props }: RoundedBoxProps) {
   const geometry = useMemo(() => new RoundedBoxGeometry(w, h, d, smoothness, radius), [w, h, d, smoothness, radius])
   useEffect(() => () => geometry.dispose(), [geometry])
   return (
@@ -25,11 +38,11 @@ const reducedMotion = () => {
   }
 }
 
-function canvasTexture(w, h, paint, srgb = true) {
+function canvasTexture(w: number, h: number, paint: Paint, srgb = true) {
   const c = document.createElement('canvas')
   c.width = w
   c.height = h
-  paint(c.getContext('2d'), w, h)
+  paint(ctx2d(c), w, h)
   const t = new THREE.CanvasTexture(c)
   if (srgb) t.colorSpace = THREE.SRGBColorSpace
   t.anisotropy = 4
@@ -46,7 +59,7 @@ function noiseTexture() {
     (g) => {
       const small = document.createElement('canvas')
       small.width = small.height = 16
-      const s = small.getContext('2d')
+      const s = ctx2d(small)
       const img = s.createImageData(16, 16)
       let seed = 11
       for (let i = 0; i < 256; i++) {
@@ -67,7 +80,7 @@ function noiseTexture() {
 }
 
 // Two twisting ribbons of steam rising from the mug.
-export const Steam = forwardRef(function Steam({ height = 0.2, width = 0.07, ...props }, ref) {
+export function Steam({ ref, height = 0.2, width = 0.07, ...props }: { ref?: Ref<THREE.Group>; height?: number; width?: number } & GroupProps) {
   const material = useMemo(
     () =>
       new THREE.ShaderMaterial({
@@ -118,7 +131,7 @@ export const Steam = forwardRef(function Steam({ height = 0.2, width = 0.07, ...
       ))}
     </group>
   )
-})
+}
 
 /* --------------------------------------------------------------- screens */
 
@@ -128,10 +141,16 @@ export const laptopScreen = new THREE.MeshBasicMaterial({ toneMapped: false, col
 
 // A muted clip looping on a screen. Clips are tiny (20 to 50 KB), load after the
 // room is on screen, and are decoded by the browser's video hardware.
-export function ScreenVideo({ clip, material, width, height, ...props }) {
+interface ScreenVideoProps extends Omit<ThreeElements['mesh'], 'material'> {
+  clip: string
+  material: THREE.MeshBasicMaterial
+  width: number
+  height: number
+}
+export function ScreenVideo({ clip, material, width, height, ...props }: ScreenVideoProps) {
   useEffect(() => {
-    let video
-    let texture
+    let video: HTMLVideoElement | undefined
+    let texture: THREE.VideoTexture | undefined
     let cancelled = false
     getVideoUrl(clip).then((src) => {
       if (cancelled) return
@@ -144,7 +163,8 @@ export function ScreenVideo({ clip, material, width, height, ...props }) {
       material.map = texture
       material.needsUpdate = true
       if (reducedMotion()) {
-        video.addEventListener('loadeddata', () => (video.currentTime = 4.5), { once: true })
+        // `!`: assigned just above; the nested closure loses that narrowing
+        video.addEventListener('loadeddata', () => (video!.currentTime = 4.5), { once: true })
       } else {
         video.play().catch(() => {}) // muted autoplay is allowed; ignore a browser that refuses
       }
@@ -167,7 +187,7 @@ export function ScreenVideo({ clip, material, width, height, ...props }) {
 
 // A slim silver laptop: aluminium body, black bezel, code on screen.
 // Built facing +z; rotate it to face the person using it.
-export function Laptop(props) {
+export function Laptop(props: GroupProps) {
   const W = 0.27, D = 0.19, T = 0.009
   const LID_H = 0.172
   const silver = '#C9CCD1'
@@ -207,10 +227,10 @@ export function Laptop(props) {
 /* ----------------------------------------------------------------- clock */
 
 // Seven-segment digits, drawn rather than typeset so no font is needed.
-const SEGMENTS = { 0: 'abcdef', 1: 'bc', 2: 'abged', 3: 'abgcd', 4: 'fgbc', 5: 'afgcd', 6: 'afgedc', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg' }
-function drawDigit(g, ch, x, y, w, h, on, off) {
+const SEGMENTS: Record<string, string> = { 0: 'abcdef', 1: 'bc', 2: 'abged', 3: 'abgcd', 4: 'fgbc', 5: 'afgcd', 6: 'afgedc', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg' }
+function drawDigit(g: CanvasRenderingContext2D, ch: string, x: number, y: number, w: number, h: number, on: string, off: string) {
   const t = w * 0.18
-  const segs = {
+  const segs: Record<string, [x: number, y: number, w: number, h: number]> = {
     a: [x + t, y, w - 2 * t, t], d: [x + t, y + h - t, w - 2 * t, t], g: [x + t, y + h / 2 - t / 2, w - 2 * t, t],
     f: [x, y + t, t, h / 2 - t], b: [x + w - t, y + t, t, h / 2 - t],
     e: [x, y + h / 2, t, h / 2 - t], c: [x + w - t, y + h / 2, t, h / 2 - t],
@@ -223,18 +243,18 @@ function drawDigit(g, ch, x, y, w, h, on, off) {
 
 // A walnut-framed digital clock in 24-hour time, showing the visitor's real
 // local time: big digits and a seconds bar along the bottom.
-export function DigitalClock({ at, facing = 'z' }) {
+export function DigitalClock({ at, facing = 'z' }: { at: Vec3; facing?: 'x' | 'z' }) {
   const W = 0.3, H = 0.12, D = 0.03
   const { texture, draw } = useMemo(() => {
     const c = document.createElement('canvas')
     c.width = 512
     c.height = 192
-    const g = c.getContext('2d')
+    const g = ctx2d(c)
     const t = new THREE.CanvasTexture(c)
     t.colorSpace = THREE.SRGBColorSpace
     t.anisotropy = 4
     const on = '#F6E7C1', off = 'rgba(246,231,193,0.07)'
-    const draw = (d) => {
+    const draw = (d: Date) => {
       const hh = String(d.getHours()).padStart(2, '0')
       const mm = String(d.getMinutes()).padStart(2, '0')
       const sec = d.getSeconds()
@@ -385,7 +405,7 @@ const POSTERS = {
     g.beginPath()
     g.arc(m + iw * 0.5, m + ih * 0.5, iw * 0.26, 0, Math.PI * 2)
     g.fill()
-    ;[['#C98F72', 0.62], ['#A86F63', 0.72], ['#7E5A5C', 0.82], [C.ink, 0.92]].forEach(([c, y], i) => {
+    ;([['#C98F72', 0.62], ['#A86F63', 0.72], ['#7E5A5C', 0.82], [C.ink, 0.92]] as const).forEach(([c, y], i) => {
       g.fillStyle = c
       g.beginPath()
       g.moveTo(m, m + ih)
@@ -406,7 +426,7 @@ const POSTERS = {
     const cx = w * 0.5
     const unit = w * 0.07
     g.fillStyle = '#5E7A5A'
-    const pill = (x, y, ww, hh) => {
+    const pill = (x: number, y: number, ww: number, hh: number) => {
       g.beginPath()
       g.roundRect(x, y, ww, hh, ww / 2)
       g.fill()
@@ -443,10 +463,10 @@ const POSTERS = {
     g.arc(w * 0.42, h * 0.52, h * 0.035, 0, Math.PI * 2)
     g.fill()
   },
-}
+} satisfies Record<string, Paint>
 
 // Fills the frame like CSS object-fit: cover, so any image size works.
-function coverFit(texture, frameAspect) {
+function coverFit(texture: THREE.Texture<HTMLImageElement>, frameAspect: number) {
   const img = texture.image
   const aspect = img.width / img.height
   texture.repeat.set(1, 1)
@@ -463,10 +483,18 @@ function coverFit(texture, frameAspect) {
 // A framed print. `facing` is 'x' for the left wall, 'z' for the right wall.
 // `src` shows an image file instead of the painted `art` (which stays as the
 // fallback if the image is missing or fails to load).
-export function Poster({ art, src, facing, at, size, frame = '#3A3A3A' }) {
+interface PosterProps {
+  art: keyof typeof POSTERS
+  src?: string | null
+  facing: 'x' | 'z'
+  at: Vec3
+  size: [number, number]
+  frame?: string
+}
+export function Poster({ art, src, facing, at, size, frame = '#3A3A3A' }: PosterProps) {
   const [w, h] = size
   const painted = useMemo(() => canvasTexture(Math.round(w * 1400), Math.round(h * 1400), POSTERS[art]), [art, w, h])
-  const [image, setImage] = useState(null)
+  const [image, setImage] = useState<THREE.Texture | null>(null)
   useEffect(() => {
     if (!src) return
     let alive = true
@@ -487,7 +515,7 @@ export function Poster({ art, src, facing, at, size, frame = '#3A3A3A' }) {
     }
   }, [src, w, h])
   const texture = image ?? painted
-  const rot = facing === 'x' ? [0, Math.PI / 2, 0] : [0, 0, 0]
+  const rot: Vec3 = facing === 'x' ? [0, Math.PI / 2, 0] : [0, 0, 0]
   const depth = 0.014
   const b = 0.012
   return (
@@ -517,12 +545,12 @@ export function Poster({ art, src, facing, at, size, frame = '#3A3A3A' }) {
 // An abstract, colourful rug: a mosaic of tiles, each with its own quarter
 // circles, half moons, discs or stripes in the room's palette, so every part
 // that peeks out from under the furniture is colourful.
-function paintRug(g, w, h) {
+function paintRug(g: CanvasRenderingContext2D, w: number, h: number) {
   const colors = ['#5E7A5A', C.sun, '#E8A27A', '#7C8DA6', C.ink, '#EFE7D6', '#B5684B', '#9FB4C7']
   let seed = 9
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
-  const pick = (not) => {
-    let c
+  const pick = (not?: string) => {
+    let c: string
     do c = colors[Math.floor(rnd() * colors.length)]
     while (c === not)
     return c
@@ -579,7 +607,7 @@ function paintRug(g, w, h) {
   for (let y = 0; y < h; y += 3) g.fillRect(0, y, w, 1)
 }
 
-export function Rug({ size, at }) {
+export function Rug({ size, at }: { size: [number, number]; at: Vec3 }) {
   const [L, D] = size
   const texture = useMemo(() => canvasTexture(1024, Math.round((1024 * D) / L), paintRug), [L, D])
   return (
@@ -599,13 +627,18 @@ export function Rug({ size, at }) {
 /* ------------------------------------------------------------ floor lamp */
 
 // One round base, a thin pole and a fabric shade that glows at night.
-export function FloorLamp({ at, glowSet }) {
+export function FloorLamp({ at, glowSet }: { at: Vec3; glowSet?: Set<THREE.MeshStandardMaterial> }) {
   const shade = useMemo(() => {
     const m = new THREE.MeshStandardMaterial({ color: '#F2D79A', emissive: '#F2C14E', emissiveIntensity: 0, roughness: 0.9, side: THREE.DoubleSide })
     glowSet?.add(m)
     return m
   }, [glowSet])
-  useEffect(() => () => glowSet?.delete(shade), [glowSet, shade])
+  useEffect(
+    () => () => {
+      glowSet?.delete(shade)
+    },
+    [glowSet, shade]
+  )
   return (
     <group position={at}>
       <mesh castShadow receiveShadow position={[0, 0.008, 0]}>
@@ -643,7 +676,7 @@ function gamepadShape() {
 
 // A generic game controller: a bevelled body with grips, offset thumbsticks,
 // a d-pad, four face buttons, a home button and shoulder bumpers. No logos.
-export function Gamepad({ color = '#2B2F38', ...props }) {
+export function Gamepad({ color = '#2B2F38', ...props }: { color?: string } & GroupProps) {
   const geometry = useMemo(() => {
     const g = new THREE.ExtrudeGeometry(gamepadShape(), {
       depth: 0.012,
@@ -660,7 +693,7 @@ export function Gamepad({ color = '#2B2F38', ...props }) {
   const TOP = 0.0245 // top surface of the body
   const trim = '#3A3F4A'
   // positions are [x, z] in the controller's own top view (−z is the far edge)
-  const stick = (x, z) => (
+  const stick = (x: number, z: number) => (
     <group position={[x, TOP, z]}>
       <mesh castShadow>
         <cylinderGeometry args={[0.009, 0.01, 0.006, 20]} />
@@ -715,7 +748,7 @@ export function Gamepad({ color = '#2B2F38', ...props }) {
 /* ------------------------------------------------------------ flat book */
 
 // A single hardback lying flat: cover, spine and a cream page block.
-export function FlatBook({ size = [0.1, 0.016, 0.145], cover = C.saguaro, ...props }) {
+export function FlatBook({ size = [0.1, 0.016, 0.145], cover = C.saguaro, ...props }: { size?: Vec3; cover?: string } & GroupProps) {
   const [w, h, d] = size
   return (
     <group {...props}>
@@ -739,19 +772,19 @@ const SHOE = { L: 0.16, W: 0.056, SOLE: 0.02 }
 
 // Half the foot's width along its length (x from heel −0.08 to toe +0.08):
 // narrow heel, widest across the ball of the foot, rounding off at the toe.
-const footHalfWidth = (x) => {
+const footHalfWidth = (x: number) => {
   const t = (x + 0.08) / 0.16
   return (SHOE.W / 2) * (0.74 + 0.3 * Math.sin(Math.PI * Math.min(1, t * 1.15)) - 0.12 * Math.max(0, t - 0.85) * 6)
 }
 // The toe lifts off the ground a little, like a real running shoe.
-const toeSpring = (x) => 5 * Math.max(0, x - 0.03) ** 2
+const toeSpring = (x: number) => 5 * Math.max(0, x - 0.03) ** 2
 
 // Side profile of the upper (x: heel -> toe, y: up from the top of the sole).
 const UPPER_TOP = [
   [0.079, 0.0], [0.08, 0.008], [0.072, 0.019], [0.05, 0.03], [0.02, 0.039], [-0.008, 0.046],
   [-0.028, 0.043], [-0.05, 0.046], [-0.068, 0.054], [-0.08, 0.048], [-0.081, 0.0],
 ]
-const upperTopAt = (x) => {
+const upperTopAt = (x: number) => {
   for (let i = 0; i < UPPER_TOP.length - 1; i++) {
     const [x0, y0] = UPPER_TOP[i], [x1, y1] = UPPER_TOP[i + 1]
     if ((x <= x0 && x >= x1) || (x >= x0 && x <= x1)) return y0 + ((y1 - y0) * (x - x0)) / (x1 - x0 || 1)
@@ -788,7 +821,7 @@ function useShoeGeometry() {
       const z = Math.sin(a) * (footHalfWidth(x) + 0.004)
       i === 0 ? outline.moveTo(x, z) : outline.lineTo(x, z)
     }
-    const sole = (thick, bevel) => {
+    const sole = (thick: number, bevel: number) => {
       const g = new THREE.ExtrudeGeometry(outline, { depth: thick, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3, curveSegments: 8 })
       g.rotateX(Math.PI / 2) // outline in x/z, thickness downward
       g.translate(0, thick + bevel, 0)
@@ -802,9 +835,9 @@ function useShoeGeometry() {
 }
 
 // A thin tube that runs along the side of the upper at a fixed height.
-function useSideLine(y, x0, x1, sideSign) {
+function useSideLine(y: number, x0: number, x1: number, sideSign: number) {
   return useMemo(() => {
-    const pts = []
+    const pts: THREE.Vector3[] = []
     for (let i = 0; i <= 12; i++) {
       const x = x0 + ((x1 - x0) * i) / 12
       const top = Math.max(0.012, upperTopAt(x))
@@ -818,7 +851,7 @@ function useSideLine(y, x0, x1, sideSign) {
 // A running shoe: dark outsole, white midsole with toe spring, a black upper
 // that tapers like a foot, two thin white stripes along each side, white
 // laces, a heel pull tab and a dark collar opening.
-export function RunningShoe({ upper = '#1C1E24', accent = '#F2F2EE', ...props }) {
+export function RunningShoe({ upper = '#1C1E24', accent = '#F2F2EE', ...props }: { upper?: string; accent?: string } & GroupProps) {
   const g = useShoeGeometry()
   const stripes = [
     useSideLine(0.017, -0.06, 0.01, 1), useSideLine(0.025, -0.055, 0.0, 1),
@@ -867,7 +900,12 @@ export function RunningShoe({ upper = '#1C1E24', accent = '#F2F2EE', ...props })
 /* -------------------------------------------------------------- medal case */
 
 // One medal hanging from a V of ribbon, built facing +z, hung from its top.
-function HangingMedal({ metal, ribbon, length = 0.07 }) {
+interface Medal {
+  metal: string
+  ribbon: [string, string]
+  length?: number
+}
+function HangingMedal({ metal, ribbon, length = 0.07 }: Medal) {
   const R = 0.02
   const spread = 0.012
   return (
@@ -894,7 +932,7 @@ function HangingMedal({ metal, ribbon, length = 0.07 }) {
 
 // A walnut shadow box with a navy back, a glass front and medals hanging
 // inside. Stands on its base, facing +z. `size` is [width, height, depth].
-export function MedalCase({ size = [0.24, 0.17, 0.05], medals, ...props }) {
+export function MedalCase({ size = [0.24, 0.17, 0.05], medals, ...props }: { size?: Vec3; medals: Medal[] } & GroupProps) {
   const [w, h, d] = size
   const b = 0.012 // frame thickness
   const wood = '#6B4F3A'
@@ -944,7 +982,14 @@ export function MedalCase({ size = [0.24, 0.17, 0.05], medals, ...props }) {
 // the top, a side panel and a back panel.
 // Built in room space: back against the wall at x = 0, front facing +x,
 // running from z0 to z0 + length. The top surface sits at `height`.
-export function Desk({ z0 = 1.2, length = 0.73, depth = 0.4, height = 0.384, color = '#6B4F3A' }) {
+interface DeskProps {
+  z0?: number
+  length?: number
+  depth?: number
+  height?: number
+  color?: string
+}
+export function Desk({ z0 = 1.2, length = 0.73, depth = 0.4, height = 0.384, color = '#6B4F3A' }: DeskProps) {
   const TOP = 0.026
   const under = height - TOP // underside of the top
   const PED = 0.3 // pedestal width along z
@@ -953,11 +998,12 @@ export function Desk({ z0 = 1.2, length = 0.73, depth = 0.4, height = 0.384, col
   const face = '#7A5B44'
   const reveal = '#3A2A1F'
   const metal = '#C9CCD1'
-  const zc = (a, b) => (a + b) / 2
+  const zc = (a: number, b: number) => (a + b) / 2
 
-  const box = (from, to, c, cast = true) => {
-    const size = to.map((v, i) => v - from[i])
-    const pos = to.map((v, i) => (v + from[i]) / 2)
+  const box = (from: Vec3, to: Vec3, c: string, cast = true) => {
+    // map keeps the tuple's length; TypeScript only knows it returns number[]
+    const size = to.map((v, i) => v - from[i]) as Vec3
+    const pos = to.map((v, i) => (v + from[i]) / 2) as Vec3
     return (
       <mesh position={pos} castShadow={cast} receiveShadow>
         <boxGeometry args={size} />
@@ -966,7 +1012,7 @@ export function Desk({ z0 = 1.2, length = 0.73, depth = 0.4, height = 0.384, col
     )
   }
   // a bar pull: a metal rod on two short posts, running along z
-  const pull = (x, y, z, len = 0.1) => (
+  const pull = (x: number, y: number, z: number, len = 0.1) => (
     <group position={[x, y, z]}>
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[0.012, 0, 0]} castShadow>
         <cylinderGeometry args={[0.0035, 0.0035, len, 10]} />
@@ -1028,20 +1074,22 @@ export function Desk({ z0 = 1.2, length = 0.73, depth = 0.4, height = 0.384, col
 // One adjustable spot on the track: a cylinder head with a glowing lens,
 // aimed at `target`, with a real spotlight inside it. `at` and `target` are
 // room coordinates, so the light and its aim point live outside the head's group.
-function TrackSpot({ at, target }) {
-  const head = useRef()
-  const light = useRef()
+function TrackSpot({ at, target }: { at: Vec3; target: Vec3 }) {
+  const head = useRef<THREE.Group>(null)
+  const light = useRef<THREE.SpotLight>(null)
   const aim = useMemo(() => new THREE.Object3D(), [])
   const lens = useMemo(() => new THREE.MeshStandardMaterial({ color: '#FFF1D0', emissive: '#FFE2A8', emissiveIntensity: 0.3 }), [])
   const key = `${at.join(',')}|${target.join(',')}`
   useEffect(() => {
+    // `!`: effects run after mount, when both refs are set and the head has a parent group
+    const h = head.current!
+    const l = light.current!
     aim.position.set(...target)
-    head.current.parent.updateMatrixWorld(true)
-    head.current.lookAt(...target) // the head's +z points at the target
-    light.current.target = aim
-    LIGHTS.desk.add(light.current)
+    h.parent!.updateMatrixWorld(true)
+    h.lookAt(...target) // the head's +z points at the target
+    l.target = aim
+    LIGHTS.desk.add(l)
     GLOW.desk.add(lens)
-    const l = light.current
     return () => {
       LIGHTS.desk.delete(l)
       GLOW.desk.delete(lens)
@@ -1074,7 +1122,13 @@ function TrackSpot({ at, target }) {
 
 // A slim ceiling-style track rail fixed high on the left wall, with spots
 // aimed down at the desk. `spots` is a list of { z, target }.
-export function DeskTrackLight({ y = 1.19, z0, z1, spots }) {
+interface DeskTrackLightProps {
+  y?: number
+  z0: number
+  z1: number
+  spots: { z: number; target: Vec3 }[] // one spot per entry, aimed at `target`
+}
+export function DeskTrackLight({ y = 1.19, z0, z1, spots }: DeskTrackLightProps) {
   return (
     <group>
       <mesh position={[0.03, y, (z0 + z1) / 2]} castShadow>
