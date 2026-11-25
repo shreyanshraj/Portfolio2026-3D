@@ -44,7 +44,7 @@ export const PRESETS: Record<Phase, Preset> = {
   night: {
     bg: '#1F2540', sky: '#4E5A80', ground: '#2A3150', hemi: 0.8, fill: 0.28,
     sun: '#A9BCE0', sunInt: 1.5, target: v(0.95, 0, 1.15), beam: 0.04, beamColor: '#A9BCE0',
-    outside: '#FFFFFF', lamp: 3.2, screen: 1.8, tv: 1.0, desk: 7.5, bias: 0.35, shelf: 0.75,
+    outside: '#FFFFFF', lamp: 3.2, screen: 0.9, tv: 1.0, desk: 7.5, bias: 0.35, shelf: 0.75,
   },
 }
 

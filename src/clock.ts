@@ -8,8 +8,8 @@ const isPhase = (x: string | null): x is Phase => (PHASES as readonly (string | 
 export function phaseAt(date = new Date()): Phase {
   const h = date.getHours() + date.getMinutes() / 60
   if (h >= 5 && h < 11) return 'morning'
-  if (h >= 11 && h < 17) return 'day'
-  if (h >= 17 && h < 20) return 'evening'
+  if (h >= 11 && h < 16) return 'day'
+  if (h >= 16 && h < 18) return 'evening'
   return 'night'
 }
 

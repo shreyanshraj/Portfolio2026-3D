@@ -9,6 +9,7 @@ import { OBJECTS, ROLES } from './content'
 import type { ObjectId } from './content'
 import type { View } from './scene/Experience'
 import { initialPhase, phaseAt } from './clock'
+import { toggleRadio, isPlaying } from './audio/radio'
 
 // Which side of the object its speech bubble opens on.
 // (The window has none: clicking it opens or closes it instead.)
@@ -163,8 +164,24 @@ function Home() {
   // until the time of day next changes, then the window follows the clock again.
   const [windowOpen, setWindowOpen] = useState<boolean | null>(null)
   useEffect(() => setWindowOpen(null), [phase])
+  // The record player plays an original lo-fi loop. It only ever starts from a
+  // click (browsers require that for sound) and stops on a second click.
+  const [musicOn, setMusicOn] = useState(false)
+  // leaving the room (e.g. for the résumé page) stops the music
+  useEffect(
+    () => () => {
+      if (isPlaying()) toggleRadio()
+    },
+    []
+  )
   const pick = useCallback(
     (id: ObjectId, open?: boolean) => {
+      // toggleRadio() must run right here in the click handler, not in an
+      // effect, or the browser blocks the audio
+      if (id === 'record') {
+        setMusicOn(toggleRadio())
+        return
+      }
       if (OBJECTS[id]?.toggle) {
         setWindowOpen((w) => !(w ?? phase !== 'night'))
         return
@@ -233,6 +250,7 @@ function Home() {
                 phase={phase}
                 instant={instant}
                 windowOpen={windowOpen}
+                musicOn={musicOn}
               />
             </Suspense>
           </SceneBoundary>
@@ -247,8 +265,8 @@ function Home() {
             <div key={id} className="anchor" data-anchor={id}>
               <button
                 className={`spot${picked === id ? ' is-lit' : ''}`}
-                aria-label={OBJECTS[id].label}
-                aria-pressed={OBJECTS[id].toggle ? (windowOpen ?? phase !== 'night') : picked === id}
+                aria-label={OBJECTS[id].byPhase?.[phase]?.label ?? OBJECTS[id].label}
+                aria-pressed={id === 'record' ? musicOn : OBJECTS[id].toggle ? (windowOpen ?? phase !== 'night') : picked === id}
                 onClick={() => pick(id, true)}
               />
             </div>

@@ -11,7 +11,7 @@ export interface ObjectInfo {
   label: string
   title?: string
   body?: string
-  byPhase?: Partial<Record<Phase, { title?: string; body?: string }>>
+  byPhase?: Partial<Record<Phase, { label?: string; title?: string; body?: string }>>
   action?: ObjectAction
   toggle?: boolean
   localTime?: boolean
@@ -25,6 +25,14 @@ const OBJECT_INFO = {
     title: "Hi, I'm Raj.",
     body: "Full-stack software engineer in Tempe with 5+ years building web and mobile apps and the cloud backends behind them. Most of what I've built is somewhere in this room.",
     action: { kind: 'resume', label: 'Just the résumé' },
+    // at night the chair is empty
+    byPhase: {
+      night: {
+        label: "Raj's desk chair",
+        title: 'Logged off for the night.',
+        body: "I'm Raj, a full-stack software engineer in Tempe with 5+ years building web and mobile apps and the cloud backends behind them. Most of what I've built is somewhere in this room.",
+      },
+    },
   },
   laptop: {
     label: 'MacBook',
@@ -79,6 +87,11 @@ const OBJECT_INFO = {
   // no bubble: clicking the window just opens or closes it (handled in App)
   window: {
     label: 'Window: open or close it',
+    toggle: true,
+  },
+  // no bubble: clicking the record player plays or stops the music (handled in App)
+  record: {
+    label: 'Record player: play or stop music',
     toggle: true,
   },
 } satisfies Record<string, ObjectInfo>

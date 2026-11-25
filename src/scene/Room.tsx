@@ -7,7 +7,7 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { Model, useModel } from './Model'
 import { C } from './palette'
 import { paintOutside, paintDoorView } from './timeOfDay'
-import { Steam, ScreenVideo, tvScreen, Laptop, Poster, DigitalClock, Rug, FloorLamp, Gamepad, FlatBook, MedalCase, Desk, DeskTrackLight } from './Decor'
+import { Steam, ScreenVideo, tvScreen, Laptop, Poster, DigitalClock, Rug, FloorLamp, Gamepad, FlatBook, MedalCase, Desk, DeskTrackLight, RecordPlayer } from './Decor'
 import { GLOW } from './timeOfDay'
 import { POSTER_IMAGES } from '../content'
 import type { ObjectId } from '../content'
@@ -78,6 +78,7 @@ export const ANCHORS: Record<ObjectId, Vec3> = {
   showPoster: [1.02, 0.94, 0.02],
   gamePoster: [1.3, 0.94, 0.02],
   window: [0.02, 0.74, 0.65],
+  record: [0.97, 0.3, 2.2],
 }
 
 interface BoxProps extends Omit<ThreeElements['mesh'], 'from' | 'to'> {
@@ -437,6 +438,15 @@ function Raj(props: GroupProps) {
     }
   }, [mixer, animations, clone])
 
+  // Hidden meshes still catch pointer rays in three.js, so while Raj is hidden
+  // (logged off at night) let clicks pass through him to the chair and laptop.
+  const hidden = props.visible === false
+  useEffect(() => {
+    clone.traverse((o) => {
+      if (o instanceof THREE.Mesh) o.raycast = hidden ? () => {} : THREE.Mesh.prototype.raycast
+    })
+  }, [clone, hidden])
+
   // Taller, not bigger: the Kenney figure is short and stocky, so stretch the
   // torso upward and undo that stretch on the head and arms. The sit clip
   // keys every bone at scale 1, so we set absolute values after the mixer runs
@@ -544,9 +554,10 @@ interface RoomProps extends PickState {
   doorOpen: boolean
   phase: Phase
   windowOpen: boolean | null
+  musicOn: boolean
 }
 
-export function Room({ picked, hovered, setHovered, onPick, doorOpen, phase, windowOpen }: RoomProps) {
+export function Room({ picked, hovered, setHovered, onPick, doorOpen, phase, windowOpen, musicOn }: RoomProps) {
   const p: PickState = { picked, hovered, setHovered, onPick }
   return (
     <group>
@@ -562,7 +573,7 @@ export function Room({ picked, hovered, setHovered, onPick, doorOpen, phase, win
       <Model name="plantSmall2" at={[0.0, WIN.y0, 0.72]} />
       <Desk z0={1.2} length={0.73} depth={0.4} height={DESK_Y} />
       <Pickable id="laptop" {...p}>
-        <Laptop position={[0.17, DESK_Y, 1.47]} rotation={[0, HALF, 0]} />
+        <Laptop position={[0.17, DESK_Y, 1.47]} rotation={[0, HALF, 0]} asleep={phase === 'night'} />
       </Pickable>
       <Pickable id="coffee" {...p}>
         <Mug position={MUG_REST} rotation={[0, 0.5, 0]} scale={1.6} />
@@ -578,10 +589,12 @@ export function Room({ picked, hovered, setHovered, onPick, doorOpen, phase, win
           { z: 1.95, target: [0.22, DESK_Y, 1.76] },
         ]}
       />
-      <Model name="chairDesk" rot={-HALF} at={[0.46, CASTER_H, 1.3]} palette={{ carpet: C.predawn }} />
-      <ChairCasters />
+      {/* Raj works at the desk by day and has logged off at night. The chair is
+          part of his clickable area, so his bubble still opens from the empty chair. */}
       <Pickable id="raj" {...p}>
-        <Raj position={RAJ_POS} rotation={[0, -HALF, 0]} scale={RAJ_SCALE} />
+        <Model name="chairDesk" rot={-HALF} at={[0.46, CASTER_H, 1.3]} palette={{ carpet: C.predawn }} />
+        <ChairCasters />
+        <Raj position={RAJ_POS} rotation={[0, -HALF, 0]} scale={RAJ_SCALE} visible={phase !== 'night'} />
       </Pickable>
       {/* three prints in a row over the desk, the clock centred above the middle one */}
       <Poster art="sun" facing="x" at={[0.002, DESK_ART.y, DESK_ART.z[0]]} size={DESK_ART.size} frame="#8E7356" />
@@ -589,6 +602,11 @@ export function Room({ picked, hovered, setHovered, onPick, doorOpen, phase, win
       <Poster art="contours" facing="x" at={[0.002, DESK_ART.y, DESK_ART.z[2]]} size={DESK_ART.size} frame="#8E7356" />
       <DigitalClock at={[0.002, DESK_ART.y + DESK_ART.size[1] / 2 + 0.11, DESK_ART.z[1]]} facing="x" />
       <Model name="pottedPlant" at={[0.03, 0, 2.03]} />
+      {/* a record player on a low stand along the front edge, between the plant
+          by the desk and the front plants: click it to play or stop the music */}
+      <Pickable id="record" {...p}>
+        <RecordPlayer at={[1.0, 0, 2.2]} playing={musicOn} phase={phase} />
+      </Pickable>
 
       {/* right wall: shelf, TV, Xbox */}
       <Pickable id="books" {...p}>

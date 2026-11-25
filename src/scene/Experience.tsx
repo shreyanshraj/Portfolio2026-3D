@@ -150,9 +150,10 @@ interface ExperienceProps {
   phase: Phase
   instant: boolean
   windowOpen: boolean | null
+  musicOn: boolean
 }
 
-export default function Experience({ view, picked, onPick, onClose, backdropRef, overlayRef, narrow, phase, instant, windowOpen }: ExperienceProps) {
+export default function Experience({ view, picked, onPick, onClose, backdropRef, overlayRef, narrow, phase, instant, windowOpen, musicOn }: ExperienceProps) {
   const [hovered, setHovered] = useState<ObjectId | null>(null)
   const doorOpen = picked === 'door'
   // decided once: three.js doesn't resize an existing shadow map
@@ -175,7 +176,7 @@ export default function Experience({ view, picked, onPick, onClose, backdropRef,
       <CameraRig view={view} narrow={narrow} />
       <Lighting phase={phase} picked={view === 'room' ? picked : null} backdropRef={backdropRef} instant={instant} lowPower={lowPower} />
       <Suspense fallback={null}>
-        <Room picked={picked} hovered={hovered} setHovered={setHovered} onPick={onPick} doorOpen={doorOpen} phase={phase} windowOpen={windowOpen} />
+        <Room picked={picked} hovered={hovered} setHovered={setHovered} onPick={onPick} doorOpen={doorOpen} phase={phase} windowOpen={windowOpen} musicOn={musicOn} />
       </Suspense>
       <OverlayTracker overlayRef={overlayRef} />
     </Canvas>

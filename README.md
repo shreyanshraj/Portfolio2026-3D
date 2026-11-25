@@ -71,9 +71,9 @@ The room follows the visitor's local clock:
 | Hours | Mood |
 |---|---|
 | 5:00 to 11:00 | Morning: low gold sun through the door |
-| 11:00 to 17:00 | Day: bright, high sun |
-| 17:00 to 20:00 | Evening: long orange light, floor lamp on |
-| 20:00 to 5:00 | Night: moonlight, stars, lamp, laptop and TV glowing, string lights on the patio |
+| 11:00 to 16:00 | Day: bright, high sun |
+| 16:00 to 18:00 | Evening: long orange light, floor lamp on |
+| 18:00 to 5:00 | Night: moonlight, stars, lamp and TV glowing, string lights on the patio; Raj has logged off and the laptop sleeps |
 
 The clock is checked every minute, and the room fades across if the mood
 changes while someone has the page open. While developing, `?time=night` (or
